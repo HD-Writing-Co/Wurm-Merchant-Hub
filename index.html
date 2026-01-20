@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Wurm Merchant Hub</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body { font-family: 'Segoe UI', serif; background: #2c241a; color: #e5d5b5; padding: 20px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; background: #3d3225; }
+        th, td { border: 1px solid #5c4a37; padding: 12px; text-align: left; }
+        th { background: #1a1610; color: #d4af37; }
+        .ql-high { color: #50fa7b; } /* Green for high QL */
+    </style>
+</head>
+<body>
+    <h1>Wurm Merchant Hub</h1>
+    <div id="loading">Connecting to the spirit woods...</div>
+    
+    <table id="inventory-table" style="display:none;">
+        <thead>
+            <tr>
+                <th>Item</th>
+                <th>Material</th>
+                <th>Quality (QL)</th>
+                <th>Rarity</th>
+                <th>Price</th>
+            </tr>
+        </thead>
+        <tbody id="inventory-body">
+            </tbody>
+    </table>
+	
+	<hr style="margin-top: 40px; border: 1px solid #5c4a37;">
+
+	<h2>Place an Order</h2>
+	<p>Looking for something specific? Send a request to the forge!</p>
+
+	<form id="order-form" style="max-width: 400px; background: #3d3225; padding: 20px; border: 1px solid #5c4a37;">
+		<label>Character Name:</label><br>
+		<input type="text" id="cust-name" required style="width: 100%; margin-bottom: 10px;"><br>
+    
+		<label>Item Name:</label><br>
+		<input type="text" id="item-req" placeholder="e.g. Rare Large Anchor" required style="width: 100%; margin-bottom: 10px;"><br>
+    
+		<label>Min Quality (QL):</label><br>
+		<input type="number" id="min-ql" value="50" style="width: 100%; margin-bottom: 10px;"><br>
+    
+		<label>Notes/Offer:</label><br>
+		<textarea id="notes" rows="3" style="width: 100%; margin-bottom: 10px;"></textarea><br>
+    
+    <button type="submit" style="background: #d4af37; color: #1a1610; padding: 10px 20px; border: none; cursor: pointer; font-weight: bold;">
+        Send Order to Merchant
+    </button>
+	</form>
+<div id="form-msg" style="margin-top: 10px; font-weight: bold;"></div>
+
+    <script src="app.js"></script>
+</body>
+</html>
