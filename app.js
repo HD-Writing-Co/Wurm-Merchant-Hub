@@ -1,13 +1,16 @@
-// 1. Setup Connection (Ensure you use your real URL and Key here)
 const { createClient } = supabase;
+
+// 1. Setup Connection (Ensure these match your Supabase Dashboard)
 const _url = 'https://gjftmhvteylhtlwcouwg.supabase.co';
 const _key = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdqZnRtaHZ0ZXlsaHRsd2NvdXdnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg5MTg5MDUsImV4cCI6MjA4NDQ5NDkwNX0.SBELcOhXZrm8fWHTaC1Ujjo-ZL7qUelFjxs7hmWGY5k';
 const client = createClient(_url, _key);
 
-// 2. Fetch and Display Data with Modern Card Design
+let allProducts = []; // Local cache for fast filtering
+
+// 2. Main Function to Load and Render Cards
 async function loadInventory() {
     const { data, error } = await client
-        .from('merchant_inventory') // Pulling from the VIEW we created
+        .from('merchant_inventory')
         .select('*');
 
     if (error) {
@@ -15,24 +18,33 @@ async function loadInventory() {
         return;
     }
 
-    const grid = document.getElementById('inventory-grid');
-    grid.innerHTML = ''; // Clear the "spirit woods" loading text
+    allProducts = data; // Store the data for filtering
+    renderGrid(allProducts);
+}
 
-    data.forEach(item => {
-        // Logic to pick a background icon based on category
+// 3. Render Function (The Visual Generator)
+function renderGrid(products) {
+    const grid = document.getElementById('inventory-grid');
+    grid.innerHTML = ''; 
+
+    if (products.length === 0) {
+        grid.innerHTML = '<div class="col-span-full py-10 text-center text-stone-500 italic">No matching items found...</div>';
+        return;
+    }
+
+    products.forEach(item => {
         let iconName = 'package';
-        if (item.category?.includes('Smithing')) iconName = 'anvil';
+        if (item.category?.includes('Mining')) iconName = 'pickaxe';
         if (item.category?.includes('Carpentry')) iconName = 'hammer';
-        if (item.category?.includes('Farming')) iconName = 'wheat';
-        if (item.category?.includes('Tailoring')) iconName = 'scissors';
+        if (item.category?.includes('Digging')) iconName = 'shovels';
 
         const card = `
-            <div class="wurm-card p-6 rounded-xl relative group overflow-hidden shadow-2xl">
+            <div class="wurm-card p-6 rounded-xl relative group overflow-hidden">
                 <i data-lucide="${iconName}" class="absolute -right-4 -bottom-4 w-24 h-24 text-white opacity-5 pointer-events-none group-hover:opacity-10 transition-opacity"></i>
                 
                 <div class="flex items-start justify-between relative z-10">
                     <div>
-                        <span class="text-[10px] uppercase text-yellow-600 font-bold tracking-widest">${item.category || 'General'}</span>
+                        <span class="text-[10px] uppercase text-yellow-600 font-bold tracking-widest">${item.category}</span>
                         <h3 class="text-xl font-semibold text-stone-200">${item.item_name}</h3>
                         <p class="text-stone-500 text-sm italic">${item.material || 'Standard'}</p>
                     </div>
@@ -40,7 +52,6 @@ async function loadInventory() {
                         <div class="bg-stone-900 px-3 py-1 rounded-md text-xs font-bold border border-yellow-800 text-yellow-500">
                             ${item.base_ql} QL
                         </div>
-                        ${item.rarity !== 'Common' ? `<div class="mt-2 text-[10px] uppercase tracking-tighter text-purple-400 font-bold">${item.rarity}</div>` : ''}
                     </div>
                 </div>
 
@@ -53,28 +64,50 @@ async function loadInventory() {
         grid.innerHTML += card;
     });
 
-    // CRITICAL: This line makes the icons appear after the cards are created
-    lucide.createIcons();
+    lucide.createIcons(); // Initialize icons for newly created cards
 }
 
-// 3. Handle the Order Form Submission
-const orderForm = document.getElementById('order-form');
-if (orderForm) {
-    orderForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const { error } = await client.from('order_requests').insert([{
-            customer_name: document.getElementById('cust-name').value,
-            item_name: document.getElementById('item-req').value,
-            category_id: 1 // Link this to a real ID if needed later
-        }]);
+// 4. Filtering Logic (Sidebar Buttons)
+window.filterCategory = (category) => {
+    if (category === 'All') {
+        renderGrid(allProducts);
+    } else {
+        const filtered = allProducts.filter(p => p.category === category);
+        renderGrid(filtered);
+    }
+};
 
-        if (error) alert("Order failed!");
-        else {
-            alert("Order sent to the Hub!");
-            orderForm.reset();
-        }
-    });
-}
+// 5. Search Logic (Typing in Search Bar)
+document.getElementById('search-bar').addEventListener('input', (e) => {
+    const term = e.target.value.toLowerCase();
+    const filtered = allProducts.filter(p => 
+        p.item_name.toLowerCase().includes(term) || 
+        p.material?.toLowerCase().includes(term) ||
+        p.category?.toLowerCase().includes(term)
+    );
+    renderGrid(filtered);
+});
 
-// Start the app
+// 6. Handle Order Form
+document.getElementById('order-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = e.target.querySelector('button');
+    btn.innerText = "SENDING...";
+    
+    const { error } = await client.from('order_requests').insert([{
+        customer_name: document.getElementById('cust-name').value,
+        item_name: document.getElementById('item-req').value,
+        notes: document.getElementById('notes').value,
+        category_id: 1 // Link to a general category
+    }]);
+
+    if (error) {
+        alert("Error sending order.");
+    } else {
+        alert("Order placed successfully!");
+        e.target.reset();
+    }
+    btn.innerText = "PLACE CUSTOM ORDER";
+});
+
 loadInventory();
