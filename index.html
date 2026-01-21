@@ -6,9 +6,14 @@
     <title>Wurm Merchant Hub</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+	<script src="https://unpkg.com/lucide@latest"></script>
     <style>
         body { background-color: #1a1a1a; color: #e5d5b5; }
-        .wurm-card { background: #262626; border: 1px solid #3d3225; transition: transform 0.2s; }
+        .wurm-card {
+			background: linear-gradient(145deg, #2a2a2a, #232323);
+			border: 1px solid rgba(212, 175, 55, 0.1);
+			box-shadow: inset 0 1px 1px rgba(255,255,255,0.05), 0 10px 20px rgba(0,0,0,0.5);
+		}
         .wurm-card:hover { transform: translateY(-5px); border-color: #d4af37; }
         .gold-text { color: #d4af37; }
     </style>
@@ -21,12 +26,21 @@
                class="w-full max-w-md bg-stone-800 border border-stone-700 p-3 rounded-full text-center focus:outline-none focus:border-yellow-600">
     </header>
 
-    <div class="flex flex-wrap justify-center gap-4 mb-12">
-        <button class="px-6 py-2 rounded-full border border-stone-600 hover:bg-stone-700">All</button>
-        <button class="px-6 py-2 rounded-full border border-stone-600 hover:bg-stone-700">Smithing</button>
-        <button class="px-6 py-2 rounded-full border border-stone-600 hover:bg-stone-700">Carpentry</button>
-        <button class="px-6 py-2 rounded-full border border-stone-600 hover:bg-stone-700">Tailoring</button>
-    </div>
+    <div class="flex flex-wrap justify-center gap-8 mb-16">
+    <button onclick="filterCategory('Smithing')" class="group flex flex-col items-center">
+        <div class="w-16 h-16 rounded-full border-2 border-stone-700 flex items-center justify-center group-hover:border-yellow-500 group-hover:shadow-[0_0_15px_rgba(212,175,55,0.5)] transition-all duration-300 mb-2">
+            <i data-lucide="anvil" class="text-stone-500 group-hover:text-yellow-500"></i>
+        </div>
+        <span class="text-xs uppercase tracking-tighter text-stone-500 group-hover:text-yellow-500">Smithing</span>
+    </button>
+    
+    <button onclick="filterCategory('Carpentry')" class="group flex flex-col items-center">
+        <div class="w-16 h-16 rounded-full border-2 border-stone-700 flex items-center justify-center group-hover:border-yellow-500 group-hover:shadow-[0_0_15px_rgba(212,175,55,0.5)] transition-all duration-300 mb-2">
+            <i data-lucide="hammer" class="text-stone-500 group-hover:text-yellow-500"></i>
+        </div>
+        <span class="text-xs uppercase tracking-tighter text-stone-500 group-hover:text-yellow-500">Carpentry</span>
+    </button>
+</div>
 
     <main id="inventory-grid" class="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         </main>
