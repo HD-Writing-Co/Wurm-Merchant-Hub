@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login | Wurm Merchant Hub</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body { background-color: #0f0f0f; color: #e5d5b5; font-family: 'Inter', sans-serif; }
+        .auth-card { background: #161616; border: 1px solid #292524; box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
+        input { background: #0f0f0f !important; border: 1px solid #292524 !important; color: white !important; }
+        input:focus { border-color: #d4af37 !important; outline: none; }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-6">
+
+    <div class="auth-card w-full max-w-md p-10 rounded-2xl">
+        <div class="text-center mb-8">
+            <h1 class="text-3xl font-black text-yellow-500 italic mb-2">WURM HUB</h1>
+            <p class="text-stone-500 text-sm">Seller Portal Access</p>
+        </div>
+
+        <form id="auth-form" class="space-y-4">
+            <div>
+                <label class="text-[10px] uppercase font-bold text-stone-600 ml-1">Email Address</label>
+                <input type="email" id="email" class="w-full p-4 rounded-xl mt-1" required placeholder="name@email.com">
+            </div>
+            <div>
+                <label class="text-[10px] uppercase font-bold text-stone-600 ml-1">Password</label>
+                <input type="password" id="password" class="w-full p-4 rounded-xl mt-1" required placeholder="••••••••">
+            </div>
+            
+            <div class="flex flex-col gap-3 pt-4">
+                <button type="submit" id="btn-login" class="w-full bg-yellow-600 hover:bg-yellow-500 text-black font-black py-4 rounded-xl uppercase tracking-widest transition-all">
+                    Sign In
+                </button>
+                <button type="button" id="btn-signup" class="w-full border border-stone-800 hover:border-stone-600 text-stone-400 py-4 rounded-xl uppercase text-xs font-bold tracking-widest transition-all">
+                    Create Seller Account
+                </button>
+            </div>
+        </form>
+
+        <div class="mt-8 text-center">
+            <a href="index.html" class="text-xs text-stone-600 hover:text-yellow-500 transition-colors">← Back to Marketplace</a>
+        </div>
+        
+        <div id="auth-msg" class="mt-4 text-center text-sm"></div>
+    </div>
+
+    <script src="auth.js"></script>
+</body>
+</html>

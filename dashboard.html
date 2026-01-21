@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Seller Dashboard | Wurm Hub</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body class="bg-[#0f0f0f] text-[#e5d5b5] p-8">
+    <div class="max-w-4xl mx-auto">
+        <div class="flex justify-between items-center mb-10">
+            <h1 class="text-3xl font-bold text-yellow-500">Seller Dashboard</h1>
+            <button onclick="signOut()" class="text-sm text-stone-500 hover:text-white">Sign Out</button>
+        </div>
+
+        <section class="bg-stone-900 p-6 rounded-xl border border-stone-800 mb-10">
+            <h2 class="text-xl mb-4">Add New Inventory</h2>
+            <form id="add-item-form" class="grid grid-cols-2 gap-4">
+                <input type="text" id="new-item-name" placeholder="Item Name" class="bg-black p-3 rounded border border-stone-700">
+                <select id="new-item-cat" class="bg-black p-3 rounded border border-stone-700">
+                    <option value="Carpentry">Carpentry</option>
+                    <option value="Mining">Mining</option>
+                    <option value="Digging">Digging</option>
+                </select>
+                <input type="number" id="new-item-ql" placeholder="Quality (QL)" class="bg-black p-3 rounded border border-stone-700">
+                <button type="submit" class="bg-yellow-600 text-black font-bold rounded">List Item</button>
+            </form>
+        </section>
+
+        <h2 class="text-xl mb-4">Your Active Listings</h2>
+        <div id="my-inventory" class="space-y-2">
+            </div>
+    </div>
+    <script src="dashboard.js"></script>
+</body>
+</html>
