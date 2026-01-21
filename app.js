@@ -9,23 +9,29 @@ async function loadInventory() {
     grid.innerHTML = ''; // Clear grid
 
     data.forEach(item => {
-        const card = `
-            <div class="wurm-card p-6 rounded-xl shadow-2xl relative overflow-hidden">
-                <div class="absolute top-2 right-2 bg-stone-900 px-3 py-1 rounded-md text-xs font-bold border border-yellow-800">
-                    ${item.base_ql} QL
-                </div>
-                
-                <h3 class="text-xl font-bold mb-1">${item.item_name}</h3>
-                <p class="text-stone-500 text-sm mb-4 italic">${item.material || 'Standard Material'}</p>
-                
-                <div class="flex justify-between items-center mt-6">
-                    <span class="text-lg font-mono gold-text">${item.price_display || 'Negotiable'}</span>
-                    <button class="bg-stone-700 hover:bg-stone-600 px-4 py-1 rounded text-xs uppercase font-bold">Details</button>
-                </div>
-                
-                ${item.rarity !== 'Common' ? `<div class="mt-2 text-xs uppercase tracking-widest text-purple-400 font-bold">${item.rarity}</div>` : ''}
+        const itemIcon = item.category === 'Smithing' ? 'shield' : 'package'; // Logic to pick icon
+
+const card = `
+    <div class="wurm-card p-6 rounded-xl relative group">
+        <i data-lucide="${itemIcon}" class="absolute -right-4 -bottom-4 w-24 h-24 text-white opacity-5 pointer-events-none"></i>
+        
+        <div class="flex items-start justify-between">
+            <div>
+                <span class="text-[10px] uppercase text-yellow-600 font-bold tracking-widest">${item.category}</span>
+                <h3 class="text-xl font-semibold text-stone-200">${item.item_name}</h3>
             </div>
-        `;
+            <div class="text-right">
+                <div class="text-xs text-stone-500">${item.rarity}</div>
+                <div class="text-yellow-500 font-bold">${item.base_ql} QL</div>
+            </div>
+        </div>
+
+        <div class="mt-8 flex justify-between items-end">
+            <div class="text-2xl font-light text-white">${item.price_display}</div>
+            <button class="bg-yellow-700/10 border border-yellow-700/50 text-yellow-500 px-4 py-1 rounded text-xs hover:bg-yellow-700 hover:text-black transition">View Details</button>
+        </div>
+    </div>
+`;
         grid.innerHTML += card;
     });
 }
