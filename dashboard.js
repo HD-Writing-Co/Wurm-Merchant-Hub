@@ -1,5 +1,5 @@
 const { createClient } = supabase;
-const client = createClient('YOUR_URL', 'YOUR_KEY');
+const client = createClient('https://gjftmhvteylhtlwcouwg.supabase.co', ''eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdqZnRtaHZ0ZXlsaHRsd2NvdXdnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg5MTg5MDUsImV4cCI6MjA4NDQ5NDkwNX0.SBELcOhXZrm8fWHTaC1Ujjo-ZL7qUelFjxs7hmWGY5k');
 
 async function initDashboard() {
     const { data: { user } } = await client.auth.getUser();
