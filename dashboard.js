@@ -23,6 +23,12 @@ async function initDashboard() {
     }
 }
 
+// Global Sign Out function so the HTML button can find it
+window.signOut = async function() {
+    await client.auth.signOut();
+    window.location.replace('index.html');
+};
+
 // Handle Profile Setup
 document.getElementById('profile-setup-form').addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -45,7 +51,7 @@ async function loadMyItems(userId) {
     const { data } = await client.from('products').select('*').eq('user_id', userId);
     const container = document.getElementById('my-inventory');
     
-    if (data.length === 0) {
+    if (!data || data.length === 0) {
         container.innerHTML = "You haven't listed anything yet.";
         return;
     }
@@ -64,9 +70,13 @@ async function loadMyItems(userId) {
     lucide.createIcons();
 }
 
-async function signOut() {
-    await client.auth.signOut();
-    window.location.href = 'index.html';
-}
+// Function to handle item deletion
+window.deleteItem = async function(itemId) {
+    if (confirm("Are you sure you want to remove this listing?")) {
+        const { error } = await client.from('products').delete().eq('id', itemId);
+        if (error) alert("Error deleting item");
+        else window.location.reload();
+    }
+};
 
 initDashboard();
