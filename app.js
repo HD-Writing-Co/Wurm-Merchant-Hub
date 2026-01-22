@@ -1,14 +1,28 @@
 const { createClient } = supabase;
 
-// 1. Setup Connection (Ensure these match your Supabase Dashboard)
+// 1. Setup Connection
 const _url = 'https://gjftmhvteylhtlwcouwg.supabase.co';
 const _key = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdqZnRtaHZ0ZXlsaHRsd2NvdXdnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg5MTg5MDUsImV4cCI6MjA4NDQ5NDkwNX0.SBELcOhXZrm8fWHTaC1Ujjo-ZL7qUelFjxs7hmWGY5k';
 const client = createClient(_url, _key);
 
-let allProducts = []; // Local cache for fast filtering
+let allProducts = []; 
 
 // 2. Main Function to Load and Render Cards
 async function loadInventory() {
+    // Session Check: Update "Sign In" to "Dashboard" if logged in
+    const { data: { user } } = await client.auth.getUser();
+    if (user) {
+        const authLink = document.querySelector('a[href="login.html"]');
+        if (authLink) {
+            authLink.href = 'dashboard.html';
+            const textEl = authLink.querySelector('.text-sm');
+            const subTextEl = authLink.querySelector('.text-\\[10px\\]');
+            if (textEl) textEl.innerText = 'Dashboard';
+            if (subTextEl) subTextEl.innerText = 'Logged In';
+        }
+    }
+
+    // Pull from 'products' table instead of the view
     const { data, error } = await client
         .from('products')
         .select('*');
@@ -18,11 +32,11 @@ async function loadInventory() {
         return;
     }
 
-    allProducts = data; // Store the data for filtering
+    allProducts = data; 
     renderGrid(allProducts);
 }
 
-// 3. Render Function (The Visual Generator)
+// 3. Render Function
 function renderGrid(products) {
     const grid = document.getElementById('inventory-grid');
     grid.innerHTML = ''; 
@@ -64,10 +78,10 @@ function renderGrid(products) {
         grid.innerHTML += card;
     });
 
-    lucide.createIcons(); // Initialize icons for newly created cards
+    lucide.createIcons();
 }
 
-// 4. Filtering Logic (Sidebar Buttons)
+// 4. Filtering Logic
 window.filterCategory = (category) => {
     if (category === 'All') {
         renderGrid(allProducts);
@@ -77,37 +91,14 @@ window.filterCategory = (category) => {
     }
 };
 
-// 5. Search Logic (Typing in Search Bar)
+// 5. Search Logic
 document.getElementById('search-bar').addEventListener('input', (e) => {
     const term = e.target.value.toLowerCase();
     const filtered = allProducts.filter(p => 
         p.item_name.toLowerCase().includes(term) || 
-        p.material?.toLowerCase().includes(term) ||
         p.category?.toLowerCase().includes(term)
     );
     renderGrid(filtered);
-});
-
-// 6. Handle Order Form
-document.getElementById('order-form').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const btn = e.target.querySelector('button');
-    btn.innerText = "SENDING...";
-    
-    const { error } = await client.from('order_requests').insert([{
-        customer_name: document.getElementById('cust-name').value,
-        item_name: document.getElementById('item-req').value,
-        notes: document.getElementById('notes').value,
-        category_id: 1 // Link to a general category
-    }]);
-
-    if (error) {
-        alert("Error sending order.");
-    } else {
-        alert("Order placed successfully!");
-        e.target.reset();
-    }
-    btn.innerText = "PLACE CUSTOM ORDER";
 });
 
 loadInventory();
