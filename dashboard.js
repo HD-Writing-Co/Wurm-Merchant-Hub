@@ -40,15 +40,26 @@ window.deleteItem = async function(itemId) {
 // --- ADD ITEM HANDLER ---
 document.getElementById('add-item-form').addEventListener('submit', async (e) => {
     e.preventDefault();
+    
+    const nameEl = document.getElementById('item-name');
+    const catEl = document.getElementById('item-cat');
+    const qlEl = document.getElementById('item-ql');
+    const priceEl = document.getElementById('item-price');
+
+    // Safety check: if any are missing, stop and alert
+    if (!nameEl || !catEl || !qlEl || !priceEl) {
+        console.error("One or more form elements are missing from the HTML.");
+        return;
+    }
+
     const { data: { user } } = await client.auth.getUser();
     
-    // COLLECT DATA: HTML IDs (item-name) -> Database Columns (item_name)
     const newItem = {
         user_id: user.id,
-        item_name: document.getElementById('item-name').value, 
-        category: document.getElementById('item-cat').value,
-        base_ql: parseInt(document.getElementById('item-ql').value),
-        price_display: document.getElementById('item-price').value
+        item_name: nameEl.value, 
+        category: catEl.value,
+        base_ql: parseInt(qlEl.value),
+        price_display: priceEl.value
     };
 
     const { error } = await client.from('products').insert([newItem]);
