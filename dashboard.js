@@ -28,10 +28,10 @@ document.getElementById('add-item-form').addEventListener('submit', async (e) =>
     // MAPPING HTML IDs TO DATABASE COLUMNS
     const newItem = {
         user_id: user.id,
-        item_name: document.getElementById('new-item-name').value, 
-        category: document.getElementById('new-item-cat').value,
-        base_ql: parseInt(document.getElementById('new-item-ql').value),
-        price_display: document.getElementById('new-item-price').value
+        item_name: document.getElementById('item-name').value, 
+        category: document.getElementById('item-cat').value,
+        base_ql: parseInt(document.getElementById('item-ql').value),
+        price_display: document.getElementById('item-price').value
     };
 
     const { error } = await client.from('products').insert([newItem]);
