@@ -6,14 +6,15 @@ const _key = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZ
 const client = createClient(_url, _key);
 
 /**
- * Checks for an active session to update navigation UI
+ * Checks for an active session and restores the sleek Merchant Portal look
  */
 async function checkUser() {
     const { data: { user } } = await client.auth.getUser();
     const navContainer = document.getElementById('nav-auth');
     
     if (user && navContainer) {
-        // We restore the original look but point it to the dashboard
+        // We inject the original HTML structure you liked, 
+        // but customized for a logged-in state.
         navContainer.innerHTML = `
             <a href="dashboard.html" class="block p-4 rounded-xl bg-stone-900 border border-stone-800 mb-8 mt-auto hover:border-yellow-700/50 transition-all">
                 <p class="text-[10px] text-stone-600 font-bold uppercase mb-2">Merchant Portal</p>
@@ -23,12 +24,12 @@ async function checkUser() {
                     </div>
                     <div>
                         <div class="text-sm font-bold text-stone-200">Dashboard</div>
-                        <div class="text-[10px] text-stone-500 italic">Welcome back, Merchant</div>
+                        <div class="text-[10px] text-stone-500 italic truncate w-32">${user.email}</div>
                     </div>
                 </div>
             </a>
         `;
-        // Re-run lucide to fix the new icon
+        // Refresh icons since we just injected a new one
         if (window.lucide) lucide.createIcons();
     }
 }
