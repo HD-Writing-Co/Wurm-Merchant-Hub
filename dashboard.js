@@ -6,19 +6,10 @@ const client = createClient(_url, _key);
 
 async function initDashboard() {
     const { data: { user } } = await client.auth.getUser();
-    
-    if (!user) {
-        window.location.href = 'login.html';
-        return;
-    }
+    if (!user) { window.location.href = 'login.html'; return; }
 
-    const { data: profile, error } = await client
-        .from('profiles')
-        .select('*')
-        .eq('id', user.id)
-        .maybeSingle(); // maybeSingle() prevents the 406 error if no profile exists yet
-
-    if (error) console.error("Profile fetch error:", error);
+    // using maybeSingle prevents the 406 error if your profile doesn't exist yet
+    const { data: profile } = await client.from('profiles').select('*').eq('id', user.id).maybeSingle();
 
     if (!profile || !profile.character_name) {
         const overlay = document.getElementById('setup-overlay');
@@ -30,30 +21,19 @@ async function initDashboard() {
     }
 }
 
-window.signOut = async function() {
-    await client.auth.signOut();
-    window.location.replace('index.html');
-};
+window.signOut = async () => { await client.auth.signOut(); window.location.replace('index.html'); };
 
-window.deleteItem = async function(itemId) {
-    if (confirm("Remove this listing?")) {
-        const { error } = await client.from('products').delete().eq('id', itemId);
-        if (error) alert("Error: " + error.message);
-        else window.location.reload();
-    }
-};
-
-// ADD ITEM FORM HANDLER
+// Corrected Add Item Logic
 document.getElementById('add-item-form').addEventListener('submit', async (e) => {
     e.preventDefault();
     const { data: { user } } = await client.auth.getUser();
     
-    // COLLECT DATA: Mapping HTML IDs (new-item-name) to Database Columns (item_name)
+    // IDs now match dashboard.html exactly: new-item-name, new-item-cat, new-item-ql
     const newItem = {
         user_id: user.id,
-        item_name: document.getElementById('new-item-name').value, // Corrected ID
-        category: document.getElementById('new-item-cat').value,   // Corrected ID
-        base_ql: parseInt(document.getElementById('new-item-ql').value), // Corrected ID
+        item_name: document.getElementById('new-item-name').value, 
+        category: document.getElementById('new-item-cat').value,
+        base_ql: parseInt(document.getElementById('new-item-ql').value),
         price_display: "Offer"
     };
 
@@ -69,21 +49,17 @@ document.getElementById('add-item-form').addEventListener('submit', async (e) =>
 });
 
 async function loadMyItems(userId) {
-    const { data, error } = await client.from('products').select('*').eq('user_id', userId);
+    const { data } = await client.from('products').select('*').eq('user_id', userId);
     const container = document.getElementById('my-inventory');
-    
     if (data && data.length > 0) {
         container.innerHTML = data.map(item => `
             <div class="flex justify-between items-center bg-stone-900/50 p-4 rounded-xl border border-stone-800">
                 <div>
-                    <span class="text-white font-bold">${item.item_name}</span> 
+                    <span class="text-white font-bold">${item.item_name}</span>
                     <span class="text-yellow-600 ml-2">${item.base_ql} QL</span>
                 </div>
-                <button onclick="deleteItem(${item.id})" class="text-red-900 hover:text-red-500 transition-colors">
-                    Remove
-                </button>
-            </div>
-        `).join('');
+                <button onclick="deleteItem(${item.id})" class="text-red-900">Remove</button>
+            </div>`).join('');
     } else {
         container.innerHTML = "<p class='text-stone-600 italic'>No active listings.</p>";
     }
