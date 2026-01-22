@@ -15,16 +15,18 @@ document.getElementById('add-item-form').addEventListener('submit', async (e) =>
     e.preventDefault();
     const { data: { user } } = await client.auth.getUser();
     
-    // Mapping HTML inputs to your database columns
+    // We now include seller_id to satisfy the database constraint
     const newItem = {
         user_id: user.id,
+        seller_id: user.id, // ADDED THIS LINE
         item_name: document.getElementById('item-name').value, 
         category: document.getElementById('item-cat').value,
         base_ql: parseInt(document.getElementById('item-ql').value),
         price_g: parseInt(document.getElementById('price-g').value) || 0,
         price_s: parseInt(document.getElementById('price-s').value) || 0,
         price_c: parseInt(document.getElementById('price-c').value) || 0,
-        price_i: parseInt(document.getElementById('price-i').value) || 0
+        price_i: parseInt(document.getElementById('price-i').value) || 0,
+        price_display: `${document.getElementById('price-g').value}g ${document.getElementById('price-s').value}s ${document.getElementById('price-c').value}c`
     };
 
     const { error } = await client.from('products').insert([newItem]);
