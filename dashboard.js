@@ -6,8 +6,34 @@ const client = createClient(_url, _key);
 async function initDashboard() {
     const { data: { user } } = await client.auth.getUser();
     if (!user) { window.location.href = 'login.html'; return; }
+    loadProfile(user.id);
     loadMyItems(user.id);
 }
+
+// PROFILE LOGIC
+async function loadProfile(userId) {
+    const { data } = await client.from('profiles').select('*').eq('id', userId).single();
+    if (data) {
+        document.getElementById('char-name').value = data.character_name || '';
+        document.getElementById('char-server').value = data.server_name || 'Cadence';
+        document.getElementById('char-bio').value = data.bio || '';
+    }
+}
+
+window.saveProfile = async () => {
+    const { data: { user } } = await client.auth.getUser();
+    const updates = {
+        id: user.id,
+        character_name: document.getElementById('char-name').value,
+        server_name: document.getElementById('char-server').value,
+        bio: document.getElementById('char-bio').value,
+        updated_at: new Date()
+    };
+
+    const { error } = await client.from('profiles').upsert(updates);
+    if (error) alert(error.message);
+    else alert("Profile updated successfully!");
+};
 
 window.signOut = async () => { await client.auth.signOut(); window.location.replace('index.html'); };
 
@@ -25,7 +51,7 @@ document.getElementById('add-item-form').addEventListener('submit', async (e) =>
     
     const newItem = {
         user_id: user.id,
-        seller_id: user.id, // Fixed Foreign Key error
+        seller_id: user.id,
         item_name: document.getElementById('item-name').value, 
         category: document.getElementById('item-cat').value,
         base_ql: parseInt(document.getElementById('item-ql').value),

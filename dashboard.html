@@ -17,6 +17,33 @@
         </div>
 
         <section class="bg-stone-900 p-6 rounded-xl border border-stone-800 mb-10">
+            <h2 class="text-xl mb-4 text-white">Merchant Profile</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="text-[10px] uppercase font-bold text-stone-500 ml-1">Character Name</label>
+                    <input type="text" id="char-name" placeholder="e.g. Vynora_Smith" class="w-full bg-black p-3 rounded border border-stone-700 text-white">
+                </div>
+                <div>
+                    <label class="text-[10px] uppercase font-bold text-stone-500 ml-1">Server</label>
+                    <select id="char-server" class="w-full bg-black p-3 rounded border border-stone-700 text-white">
+                        <option value="Cadence">Cadence</option>
+                        <option value="Harmony">Harmony</option>
+                        <option value="Melody">Melody</option>
+                        <option value="Pristine">Pristine</option>
+                        <option value="Independence">Independence</option>
+                        <option value="Exodus">Exodus</option>
+                        <option value="Celebration">Celebration</option>
+                    </select>
+                </div>
+                <div class="md:col-span-2">
+                    <label class="text-[10px] uppercase font-bold text-stone-500 ml-1">Bio / Shop Info</label>
+                    <textarea id="char-bio" placeholder="Tell customers about your delivery times or shop location..." class="w-full bg-black p-3 rounded border border-stone-700 text-white h-24"></textarea>
+                </div>
+                <button onclick="saveProfile()" class="md:col-span-2 bg-stone-800 text-yellow-500 font-bold py-2 rounded hover:bg-stone-700 transition-all">Update Profile</button>
+            </div>
+        </section>
+
+        <section class="bg-stone-900 p-6 rounded-xl border border-stone-800 mb-10">
             <h2 class="text-xl mb-4 text-white">Add New Inventory</h2>
             <form id="add-item-form" class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
