@@ -68,32 +68,29 @@ if (profileForm) {
     });
 }
 
-const addItemForm = document.getElementById('add-item-form');
-if (addItemForm) {
-    addItemForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const { data: { user } } = await client.auth.getUser();
-        
-        // Use IDs from dashboard.html: new-item-name, new-item-cat, new-item-ql, item-price
-        const newItem = {
-            user_id: user.id,
-            item_name: document.getElementById('new-item-name').value,
-            category: document.getElementById('new-item-cat').value,
-            base_ql: parseInt(document.getElementById('new-item-ql').value),
-            price_display: document.getElementById('item-price')?.value || 'Contact'
-        };
+document.getElementById('add-item-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const { data: { user } } = await client.auth.getUser();
+    
+    // We must use 'new-item-...' to match your dashboard.html
+    const newItem = {
+        user_id: user.id,
+        item_name: document.getElementById('new-item-name').value, 
+        category: document.getElementById('new-item-cat').value,
+        base_ql: parseInt(document.getElementById('new-item-ql').value),
+        price_display: "Offer" // We will add a price input to your HTML tomorrow!
+    };
 
-        const { error } = await client.from('products').insert([newItem]);
+    const { error } = await client.from('products').insert([newItem]);
 
-        if (error) {
-            alert("Error adding item: " + error.message);
-        } else {
-            alert("Item listed successfully!");
-            e.target.reset();
-            loadMyItems(user.id);
-        }
-    });
-}
+    if (error) {
+        alert("Error: " + error.message);
+    } else {
+        alert("Item added to the Hub!");
+        e.target.reset();
+        loadMyItems(user.id);
+    }
+});
 
 async function loadMyItems(userId) {
     const { data, error } = await client.from('products').select('*').eq('user_id', userId);
