@@ -6,59 +6,85 @@ const client = createClient(_url, _key);
 
 async function initDashboard() {
     const { data: { user } } = await client.auth.getUser();
-    if (!user) { window.location.href = 'login.html'; return; }
-
-    const { data: profile } = await client.from('profiles').select('*').eq('id', user.id).maybeSingle();
-
-    if (!profile || !profile.character_name) {
-        // Handle missing profile logic here if needed
-    } else {
-        const welcome = document.getElementById('merchant-welcome');
-        if (welcome) welcome.innerText = `Logged in as ${profile.character_name}`;
-        loadMyItems(user.id);
+    
+    if (!user) {
+        window.location.href = 'login.html';
+        return;
     }
+
+    // maybeSingle() prevents the 406 error if no profile is found
+    const { data: profile } = await client
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .maybeSingle();
+
+    // If no character name set, we could show a setup overlay, 
+    // but for now we will just load the inventory.
+    loadMyItems(user.id);
 }
 
-window.signOut = async () => { await client.auth.signOut(); window.location.replace('index.html'); };
+window.signOut = async function() {
+    await client.auth.signOut();
+    window.location.replace('index.html');
+};
 
+window.deleteItem = async function(itemId) {
+    if (confirm("Remove this listing from the Hub?")) {
+        const { error } = await client.from('products').delete().eq('id', itemId);
+        if (error) alert("Error: " + error.message);
+        else window.location.reload();
+    }
+};
+
+// --- ADD ITEM HANDLER ---
 document.getElementById('add-item-form').addEventListener('submit', async (e) => {
     e.preventDefault();
     const { data: { user } } = await client.auth.getUser();
     
-    // MAPPING HTML IDs TO DATABASE COLUMNS
+    // COLLECT DATA: HTML IDs (item-name) -> Database Columns (item_name)
     const newItem = {
         user_id: user.id,
-        item_name: document.getElementById('new-item-name').value, 
-        category: document.getElementById('new-item-cat').value,
-        base_ql: parseInt(document.getElementById('new-item-ql').value),
-        price_display: document.getElementById('new-item-price').value
+        item_name: document.getElementById('item-name').value, 
+        category: document.getElementById('item-cat').value,
+        base_ql: parseInt(document.getElementById('item-ql').value),
+        price_display: document.getElementById('item-price').value
     };
 
     const { error } = await client.from('products').insert([newItem]);
 
     if (error) {
-        alert("Error: " + error.message);
+        alert("Error saving: " + error.message);
     } else {
-        alert("Item added successfully!");
+        alert("Success! Item is now live.");
         e.target.reset();
         loadMyItems(user.id);
     }
 });
 
 async function loadMyItems(userId) {
-    const { data } = await client.from('products').select('*').eq('user_id', userId);
+    const { data, error } = await client
+        .from('products')
+        .select('*')
+        .eq('user_id', userId);
+
     const container = document.getElementById('my-inventory');
+    
     if (data && data.length > 0) {
         container.innerHTML = data.map(item => `
             <div class="flex justify-between items-center bg-stone-900/50 p-4 rounded-xl border border-stone-800">
                 <div>
                     <span class="text-white font-bold">${item.item_name}</span>
                     <span class="text-yellow-600 ml-2">${item.base_ql} QL</span>
+                    <p class="text-[10px] text-stone-500">${item.category} • ${item.price_display}</p>
                 </div>
-                <button onclick="deleteItem(${item.id})" class="text-red-900">Remove</button>
-            </div>`).join('');
+                <button onclick="deleteItem(${item.id})" class="text-red-900 hover:text-red-500 text-xs font-bold uppercase tracking-tighter transition-colors">
+                    Remove
+                </button>
+            </div>
+        `).join('');
     } else {
-        container.innerHTML = "<p class='text-stone-600 italic'>No active listings.</p>";
+        container.innerHTML = "<p class='text-stone-600 italic'>You have no active listings.</p>";
     }
 }
 
