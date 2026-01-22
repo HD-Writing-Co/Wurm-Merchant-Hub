@@ -1,6 +1,6 @@
 const { createClient } = supabase;
 
-// 1. Configuration - Replace with your actual credentials
+// 1. Configuration
 const _url = 'https://gjftmhvteylhtlwcouwg.supabase.co';
 const _key = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdqZnRtaHZ0ZXlsaHRsd2NvdXdnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg5MTg5MDUsImV4cCI6MjA4NDQ5NDkwNX0.SBELcOhXZrm8fWHTaC1Ujjo-ZL7qUelFjxs7hmWGY5k';
 const client = createClient(_url, _key);
@@ -31,7 +31,7 @@ async function initDashboard() {
 }
 
 /**
- * GLOBAL FUNCTIONS: Attached to 'window' so HTML buttons can find them
+ * GLOBAL FUNCTIONS
  */
 window.signOut = async function() {
     await client.auth.signOut();
@@ -63,24 +63,25 @@ document.getElementById('profile-setup-form').addEventListener('submit', async (
     else window.location.reload();
 });
 
+// Updated Add Item Logic
 document.getElementById('add-item-form').addEventListener('submit', async (e) => {
     e.preventDefault();
     const { data: { user } } = await client.auth.getUser();
     
     const newItem = {
         user_id: user.id,
-        name: document.getElementById('item-name').value,
+        item_name: document.getElementById('item-name').value, // Matches revised HTML IDs
         category: document.getElementById('item-cat').value,
         base_ql: parseInt(document.getElementById('item-ql').value),
-        price_display: document.getElementById('item-price').value
+        price_display: document.getElementById('item-price').value // New Price Field
     };
 
     const { error } = await client.from('products').insert([newItem]);
 
     if (error) {
-        alert("Error: " + error.message);
+        alert("Error adding item: " + error.message);
     } else {
-        alert("Item added!");
+        alert("Item listed successfully!");
         e.target.reset();
         loadMyItems(user.id);
     }
@@ -94,8 +95,9 @@ async function loadMyItems(userId) {
         container.innerHTML = data.map(item => `
             <div class="flex justify-between items-center bg-stone-900/50 p-4 rounded-xl border border-stone-800">
                 <div>
-                    <span class="text-white font-bold">${item.name}</span>
+                    <span class="text-white font-bold">${item.item_name}</span>
                     <span class="text-yellow-600 ml-2">${item.base_ql} QL</span>
+                    <p class="text-xs text-stone-500 italic">${item.price_display || 'No price set'}</p>
                 </div>
                 <button onclick="deleteItem(${item.id})" class="text-red-900 hover:text-red-500 transition-colors">
                     <i data-lucide="trash-2" class="w-4 h-4"></i>
@@ -104,7 +106,7 @@ async function loadMyItems(userId) {
         `).join('');
         lucide.createIcons();
     } else {
-        container.innerHTML = "No active listings.";
+        container.innerHTML = "<p class='text-stone-600 italic'>No active listings.</p>";
     }
 }
 

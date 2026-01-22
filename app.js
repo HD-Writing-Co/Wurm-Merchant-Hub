@@ -10,7 +10,7 @@ let allProducts = []; // Local cache for fast filtering
 // 2. Main Function to Load and Render Cards
 async function loadInventory() {
     const { data, error } = await client
-        .from('merchant_inventory')
+        .from('products')
         .select('*');
 
     if (error) {
