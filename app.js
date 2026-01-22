@@ -10,12 +10,26 @@ const client = createClient(_url, _key);
  */
 async function checkUser() {
     const { data: { user } } = await client.auth.getUser();
-    const navContainer = document.getElementById('nav-auth'); // Ensure this ID exists in your HTML nav
+    const navContainer = document.getElementById('nav-auth');
     
     if (user && navContainer) {
+        // We restore the original look but point it to the dashboard
         navContainer.innerHTML = `
-            <a href="dashboard.html" class="bg-yellow-600 text-black px-4 py-2 rounded font-bold hover:bg-yellow-500 transition-all text-sm">Dashboard</a>
+            <a href="dashboard.html" class="block p-4 rounded-xl bg-stone-900 border border-stone-800 mb-8 mt-auto hover:border-yellow-700/50 transition-all">
+                <p class="text-[10px] text-stone-600 font-bold uppercase mb-2">Merchant Portal</p>
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-full bg-yellow-900/20 border border-yellow-700/50 flex items-center justify-center">
+                        <i data-lucide="layout-dashboard" class="w-5 h-5 text-yellow-500"></i>
+                    </div>
+                    <div>
+                        <div class="text-sm font-bold text-stone-200">Dashboard</div>
+                        <div class="text-[10px] text-stone-500 italic">Welcome back, Merchant</div>
+                    </div>
+                </div>
+            </a>
         `;
+        // Re-run lucide to fix the new icon
+        if (window.lucide) lucide.createIcons();
     }
 }
 
