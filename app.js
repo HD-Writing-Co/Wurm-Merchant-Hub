@@ -6,29 +6,30 @@ const _key = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZ
 const client = createClient(_url, _key);
 
 /**
- * Fetches all products from the Supabase 'products' table.
+ * Checks for an active session to update navigation UI
  */
-async function loadInventory() {
-    const { data, error } = await client
-        .from('products')
-        .select('*');
+async function checkUser() {
+    const { data: { user } } = await client.auth.getUser();
+    const navContainer = document.getElementById('nav-auth'); // Ensure this ID exists in your HTML nav
+    
+    if (user && navContainer) {
+        navContainer.innerHTML = `
+            <a href="dashboard.html" class="bg-yellow-600 text-black px-4 py-2 rounded font-bold hover:bg-yellow-500 transition-all text-sm">Dashboard</a>
+        `;
+    }
+}
 
+async function loadInventory() {
+    const { data, error } = await client.from('products').select('*');
     if (error) {
         console.error("Error fetching inventory:", error.message);
         return;
     }
-
     renderGrid(data);
 }
 
-/**
- * Renders the product cards into the inventory-grid.
- * @param {Array} products - Array of product objects from the database.
- */
 function renderGrid(products) {
     const grid = document.getElementById('inventory-grid');
-    
-    // Clear placeholders and "Loading" text before showing real items
     grid.innerHTML = ''; 
 
     if (!products || products.length === 0) {
@@ -37,7 +38,6 @@ function renderGrid(products) {
     }
 
     products.forEach(item => {
-        // 1. Build the Wurm Currency Display String
         let priceParts = [];
         if (item.price_g > 0) priceParts.push(`${item.price_g}g`);
         if (item.price_s > 0) priceParts.push(`${item.price_s}s`);
@@ -46,36 +46,21 @@ function renderGrid(products) {
         
         const finalPriceLabel = priceParts.length > 0 ? priceParts.join(' ') : "Offer";
 
-        // 2. Set Name Color based on Rarity
-        let nameColor = "text-stone-200"; // Default (Common)
+        let nameColor = "text-stone-200"; 
         if (item.rarity === 'Rare') nameColor = "text-blue-400";
         if (item.rarity === 'Supreme') nameColor = "text-pink-500";
         if (item.rarity === 'Fantastic') nameColor = "text-green-400";
 
-        // 3. Select Icon based on Category
-        let iconName = 'package';
-        const cat = (item.category || '').toLowerCase();
-        if (cat.includes('mining')) iconName = 'pickaxe';
-        if (cat.includes('smithing')) iconName = 'hammer';
-        if (cat.includes('carpentry')) iconName = 'log-in'; // or custom icon
-        if (cat.includes('digging')) iconName = 'shovel';
-
-        // 4. Construct the Card HTML
-        const card = `
+        grid.innerHTML += `
             <div class="wurm-card p-6 rounded-xl relative group overflow-hidden border border-stone-800 bg-stone-900/40">
-                <i data-lucide="${iconName}" class="absolute -right-4 -bottom-4 w-24 h-24 text-white opacity-5"></i>
-                
                 <div class="relative z-10">
                     <span class="text-[10px] uppercase text-yellow-600 font-bold tracking-widest">${item.category || 'Misc'}</span>
-                    
                     <h3 class="text-xl font-semibold mt-1 ${nameColor}">${item.item_name}</h3>
-                    
                     <div class="mt-8 flex justify-between items-end">
                         <div class="flex flex-col">
                             <span class="text-[10px] text-stone-500 uppercase font-medium">Price</span>
                             <div class="text-xl font-bold text-white tracking-tight">${finalPriceLabel}</div>
                         </div>
-                        
                         <div class="flex flex-col items-end">
                             <span class="text-[10px] uppercase text-stone-500 font-medium mb-1">${item.rarity || 'Common'}</span>
                             <div class="bg-black/60 px-3 py-1 rounded text-xs border border-yellow-900/50 text-yellow-500 font-mono">
@@ -85,15 +70,13 @@ function renderGrid(products) {
                     </div>
                 </div>
             </div>`;
-
-        grid.innerHTML += card;
     });
 
-    // Re-initialize Lucide icons for the newly injected HTML
-    if (window.lucide) {
-        lucide.createIcons();
-    }
+    if (window.lucide) lucide.createIcons();
 }
 
 // Initial Load
-document.addEventListener('DOMContentLoaded', loadInventory);
+document.addEventListener('DOMContentLoaded', () => {
+    checkUser();
+    loadInventory();
+});
