@@ -7,7 +7,6 @@ const client = createClient(_url, _key);
 let allProducts = []; 
 
 async function loadInventory() {
-    // Session Check to update sidebar
     const { data: { user } } = await client.auth.getUser();
     if (user) {
         const authLink = document.querySelector('a[href="login.html"]');
@@ -18,7 +17,6 @@ async function loadInventory() {
         }
     }
 
-    // Pulling from the main products table
     const { data, error } = await client.from('products').select('*');
 
     if (error) {

@@ -8,12 +8,10 @@ async function initDashboard() {
     const { data: { user } } = await client.auth.getUser();
     if (!user) { window.location.href = 'login.html'; return; }
 
-    // using maybeSingle prevents the 406 error if your profile doesn't exist yet
     const { data: profile } = await client.from('profiles').select('*').eq('id', user.id).maybeSingle();
 
     if (!profile || !profile.character_name) {
-        const overlay = document.getElementById('setup-overlay');
-        if (overlay) overlay.classList.remove('hidden');
+        // Handle missing profile logic here if needed
     } else {
         const welcome = document.getElementById('merchant-welcome');
         if (welcome) welcome.innerText = `Logged in as ${profile.character_name}`;
@@ -23,18 +21,17 @@ async function initDashboard() {
 
 window.signOut = async () => { await client.auth.signOut(); window.location.replace('index.html'); };
 
-// Corrected Add Item Logic
 document.getElementById('add-item-form').addEventListener('submit', async (e) => {
     e.preventDefault();
     const { data: { user } } = await client.auth.getUser();
     
-    // IDs now match dashboard.html exactly: new-item-name, new-item-cat, new-item-ql
+    // MAPPING HTML IDs TO DATABASE COLUMNS
     const newItem = {
         user_id: user.id,
         item_name: document.getElementById('new-item-name').value, 
         category: document.getElementById('new-item-cat').value,
         base_ql: parseInt(document.getElementById('new-item-ql').value),
-        price_display: "Offer"
+        price_display: document.getElementById('new-item-price').value
     };
 
     const { error } = await client.from('products').insert([newItem]);
