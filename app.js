@@ -13,30 +13,26 @@ function renderGrid(products) {
     grid.innerHTML = ''; 
 
     products.forEach(item => {
-        // Build the Wurm Currency Display
-        let p = "";
-        if (item.price_g > 0) p += `${item.price_g}g `;
-        if (item.price_s > 0) p += `${item.price_s}s `;
-        if (item.price_c > 0) p += `${item.price_c}c `;
-        if (item.price_i > 0) p += `${item.price_i}i `;
-        if (p === "") p = "Offer";
-
-        let icon = item.category?.includes('Mining') ? 'pickaxe' : 'package';
+        let priceParts = [];
+        if (item.price_g > 0) priceParts.push(`${item.price_g}g`);
+        if (item.price_s > 0) priceParts.push(`${item.price_s}s`);
+        if (item.price_c > 0) priceParts.push(`${item.price_c}c`);
+        if (item.price_i > 0) priceParts.push(`${item.price_i}i`);
+        const priceStr = priceParts.length > 0 ? priceParts.join(' ') : "Offer";
 
         grid.innerHTML += `
             <div class="wurm-card p-6 rounded-xl relative overflow-hidden">
-                <i data-lucide="${icon}" class="absolute -right-4 -bottom-4 w-24 h-24 text-white opacity-5"></i>
                 <div class="relative z-10">
                     <span class="text-[10px] uppercase text-yellow-600 font-bold">${item.category}</span>
                     <h3 class="text-xl font-semibold text-stone-200">${item.item_name}</h3>
                     <div class="mt-8 flex justify-between items-end">
-                        <div class="text-xl font-bold text-white">${p}</div>
+                        <div class="text-xl font-bold text-white">${priceStr}</div>
                         <div class="bg-stone-900 px-3 py-1 rounded text-xs border border-yellow-800 text-yellow-500">${item.base_ql} QL</div>
                     </div>
                 </div>
             </div>`;
     });
-    lucide.createIcons();
+    if (window.lucide) lucide.createIcons();
 }
 
 loadInventory();

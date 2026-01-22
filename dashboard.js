@@ -11,22 +11,28 @@ async function initDashboard() {
 
 window.signOut = async () => { await client.auth.signOut(); window.location.replace('index.html'); };
 
+window.deleteItem = async (itemId) => {
+    if (confirm("Remove this listing?")) {
+        const { error } = await client.from('products').delete().eq('id', itemId);
+        if (error) alert("Error: " + error.message);
+        else window.location.reload();
+    }
+};
+
 document.getElementById('add-item-form').addEventListener('submit', async (e) => {
     e.preventDefault();
     const { data: { user } } = await client.auth.getUser();
     
-    // We now include seller_id to satisfy the database constraint
     const newItem = {
         user_id: user.id,
-        seller_id: user.id, // ADDED THIS LINE
+        seller_id: user.id, // Fixed Foreign Key error
         item_name: document.getElementById('item-name').value, 
         category: document.getElementById('item-cat').value,
         base_ql: parseInt(document.getElementById('item-ql').value),
         price_g: parseInt(document.getElementById('price-g').value) || 0,
         price_s: parseInt(document.getElementById('price-s').value) || 0,
         price_c: parseInt(document.getElementById('price-c').value) || 0,
-        price_i: parseInt(document.getElementById('price-i').value) || 0,
-        price_display: `${document.getElementById('price-g').value}g ${document.getElementById('price-s').value}s ${document.getElementById('price-c').value}c`
+        price_i: parseInt(document.getElementById('price-i').value) || 0
     };
 
     const { error } = await client.from('products').insert([newItem]);
@@ -43,15 +49,20 @@ document.getElementById('add-item-form').addEventListener('submit', async (e) =>
 async function loadMyItems(userId) {
     const { data } = await client.from('products').select('*').eq('user_id', userId);
     const container = document.getElementById('my-inventory');
+    
     if (data && data.length > 0) {
-        container.innerHTML = data.map(item => `
+        container.innerHTML = data.map(item => {
+            const p = `${item.price_g}g ${item.price_s}s ${item.price_c}c ${item.price_i}i`;
+            return `
             <div class="flex justify-between items-center bg-stone-900/50 p-4 rounded-xl border border-stone-800">
                 <div>
                     <span class="text-white font-bold">${item.item_name}</span>
                     <span class="text-yellow-600 ml-2">${item.base_ql} QL</span>
-                    <p class="text-[10px] text-stone-500">${item.category} • ${item.price_g}g ${item.price_s}s ${item.price_c}c</p>
+                    <p class="text-[10px] text-stone-500">${item.category} • ${p}</p>
                 </div>
-            </div>`).join('');
+                <button onclick="deleteItem(${item.id})" class="text-red-900 hover:text-red-500 text-xs font-bold uppercase">Remove</button>
+            </div>`;
+        }).join('');
     } else {
         container.innerHTML = "<p class='text-stone-600 italic'>No active listings.</p>";
     }
