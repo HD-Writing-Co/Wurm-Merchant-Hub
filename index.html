@@ -2,160 +2,72 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Wurm Merchant Hub</title>
+    <title>Seller Dashboard | Wurm Hub</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
-        
         body { background-color: #0f0f0f; color: #e5d5b5; font-family: 'Inter', sans-serif; }
-        
-        .wurm-card {
-            background: linear-gradient(145deg, #2a2a2a, #1a1a1a);
-            border: 1px solid rgba(212, 175, 55, 0.1);
-            box-shadow: 0 10px 20px rgba(0,0,0,0.5);
-            transition: all 0.3s ease;
-        }
-        
-        .wurm-card:hover { 
-            transform: translateY(-5px); 
-            border-color: #d4af37; 
-            box-shadow: 0 0 15px rgba(212, 175, 55, 0.2); 
-        }
-        
-        .gold-text { color: #d4af37; }
-        
-        .sidebar-link { 
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            width: 100%;
-            padding: 10px 16px;
-            border-radius: 8px;
-            color: #a8a29e;
-            transition: all 0.2s;
-            text-align: left;
-        }
-        
-        .sidebar-link:hover { 
-            background-color: #292524; 
-            color: #d4af37; 
-        }
-
-        .ad-banner { 
-            background: #161616; 
-            border: 1px dashed #3d3225; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            color: #3d3225; 
-            font-size: 10px; 
-            text-transform: uppercase; 
-            letter-spacing: 2px; 
-            text-align: center;
-        }
+        .dashboard-card { background: #161616; border: 1px solid #292524; }
+        input, select, textarea { background: #0f0f0f !important; border: 1px solid #292524 !important; color: white !important; }
     </style>
 </head>
-<body class="flex min-h-screen">
+<body class="p-8">
 
-    <aside class="w-72 bg-[#161616] border-r border-stone-800 flex flex-col sticky top-0 h-screen overflow-y-auto">
-        <div class="p-8 flex flex-col h-full">
-            <h1 class="text-2xl font-black gold-text tracking-tighter mb-8 italic">WURM HUB</h1>
-            
-            <nav class="space-y-2 mb-8">
-                <p class="text-[10px] text-stone-600 font-bold uppercase tracking-widest mb-4">Current Stock</p>
-                
-                <button onclick="filterCategory('All')" class="sidebar-link">
-                    <i data-lucide="layout-grid" class="w-4 h-4"></i> All Inventory
-                </button>
-                
-                <button onclick="filterCategory('Carpentry')" class="sidebar-link">
-                    <i data-lucide="hammer" class="w-4 h-4"></i> Carpentry
-                </button>
-                
-                <button onclick="filterCategory('Mining')" class="sidebar-link">
-                    <i data-lucide="pickaxe" class="w-4 h-4"></i> Mining
-                </button>
-                
-                <button onclick="filterCategory('Digging')" class="sidebar-link">
-                    <i data-lucide="shovels" class="w-4 h-4"></i> Digging
-                </button>
-
-                <div class="pt-4 mt-4 border-t border-stone-800">
-                    <p class="text-[10px] text-stone-600 font-bold uppercase mb-4">Other</p>
-                    <button onclick="document.getElementById('order-form').scrollIntoView({behavior: 'smooth'})" class="sidebar-link italic">
-                        <i data-lucide="scroll" class="w-4 h-4"></i> Custom Requests
-                    </button>
-                </div>
-            </nav>
-
-            <a href="login.html" class="block p-4 rounded-xl bg-stone-900 border border-stone-800 mb-8 mt-auto hover:border-yellow-700/50 transition-all">
-                <p class="text-[10px] text-stone-600 font-bold uppercase mb-2">Merchant Portal</p>
-                <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-full bg-yellow-900/20 border border-yellow-700/50 flex items-center justify-center">
-                        <i data-lucide="log-in" class="w-5 h-5 text-yellow-500"></i>
-                    </div>
-                    <div>
-                        <div class="text-sm font-bold text-stone-200">Sign In</div>
-                        <div class="text-[10px] text-stone-500 italic">Manage Inventory</div>
-                    </div>
-                </div>
-            </a>
-
-            <div class="ad-banner w-full h-64 rounded-lg px-4">
-                Sidebar Ad Slot
-            </div>
+    <div id="setup-overlay" class="fixed inset-0 bg-black/90 z-50 flex items-center justify-center hidden">
+        <div class="dashboard-card p-8 rounded-2xl max-w-md w-full">
+            <h2 class="text-2xl font-bold text-yellow-500 mb-2">Merchant Identity</h2>
+            <p class="text-stone-500 text-sm mb-6">Before listing items, please tell us who you are in-game.</p>
+            <form id="profile-setup-form" class="space-y-4">
+                <input type="text" id="setup-char" placeholder="Character Name" class="w-full p-4 rounded-xl" required>
+                <input type="text" id="setup-server" placeholder="Server (e.g. Cadence)" class="w-full p-4 rounded-xl" required>
+                <button type="submit" class="w-full bg-yellow-600 text-black font-bold py-4 rounded-xl uppercase">Save & Continue</button>
+            </form>
         </div>
-    </aside>
+    </div>
 
-    <main class="flex-1 bg-[#0f0f0f]">
-        <div class="max-w-6xl mx-auto p-8">
-            
-            <div class="ad-banner w-full h-24 rounded-xl mb-12">
-                Top Leaderboard Ad Placement (728x90)
+    <div class="max-w-5xl mx-auto">
+        <header class="flex justify-between items-center mb-12">
+            <div>
+                <h1 class="text-3xl font-black text-white italic">SELLER DASHBOARD</h1>
+                <p id="merchant-welcome" class="text-stone-500 italic">Welcome, Merchant</p>
             </div>
+            <button onclick="signOut()" class="text-stone-500 hover:text-red-500 flex items-center gap-2">
+                <i data-lucide="log-out" class="w-4 h-4"></i> Logout
+            </button>
+        </header>
 
-            <header class="flex flex-col md:flex-row justify-between items-center gap-6 mb-12">
-                <div>
-                    <h2 class="text-3xl font-bold text-white tracking-tight">Market Catalog</h2>
-                    <p class="text-stone-500 text-sm">Browsing items from verified merchants.</p>
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <section class="lg:col-span-1">
+                <div class="dashboard-card p-6 rounded-2xl">
+                    <h3 class="text-lg font-bold mb-4 flex items-center gap-2">
+                        <i data-lucide="plus-circle" class="text-yellow-500"></i> List New Item
+                    </h3>
+                    <form id="add-item-form" class="space-y-4">
+                        <input type="text" id="item-name" placeholder="Item Name" class="w-full p-3 rounded-lg" required>
+                        <select id="item-cat" class="w-full p-3 rounded-lg">
+                            <option value="Carpentry">Carpentry</option>
+                            <option value="Mining">Mining</option>
+                            <option value="Digging">Digging</option>
+                        </select>
+                        <input type="number" id="item-ql" placeholder="QL" class="w-full p-3 rounded-lg" required>
+                        <input type="text" id="item-price" placeholder="Price (e.g. 1s 50c)" class="w-full p-3 rounded-lg">
+                        <button type="submit" class="w-full bg-yellow-600 text-black font-bold py-3 rounded-lg uppercase text-sm">Post to Hub</button>
+                    </form>
                 </div>
-                <div class="relative w-full max-w-md">
-                    <i data-lucide="search" class="absolute left-4 top-3.5 text-stone-500 w-4 h-4"></i>
-                    <input type="text" id="search-bar" placeholder="Search items, materials, or sellers..." 
-                           class="w-full bg-stone-900 border border-stone-800 p-3 pl-12 rounded-xl focus:outline-none focus:border-yellow-600 transition-all text-sm">
-                </div>
-            </header>
-
-            <div id="inventory-grid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                <div class="col-span-full py-20 text-center text-stone-600 italic">
-                    <p>Connecting to the Hub...</p>
-                </div>
-            </div>
-
-            <section class="mt-24 p-10 wurm-card rounded-2xl max-w-3xl mx-auto">
-                <div class="flex items-center gap-4 mb-6">
-                    <i data-lucide="pencil-line" class="text-yellow-500 w-8 h-8"></i>
-                    <h2 class="text-2xl font-bold gold-text uppercase tracking-widest">Custom Order Request</h2>
-                </div>
-                <form id="order-form" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <input type="text" id="cust-name" placeholder="Your In-game Name" class="bg-stone-950 border border-stone-800 p-4 rounded-xl focus:border-yellow-600 outline-none text-white" required>
-                    <input type="text" id="item-req" placeholder="What are you looking for?" class="bg-stone-950 border border-stone-800 p-4 rounded-xl focus:border-yellow-600 outline-none text-white" required>
-                    <textarea id="notes" placeholder="Additional details (Server, QL, Material, or Deadline...)" class="md:col-span-2 bg-stone-950 border border-stone-800 p-4 rounded-xl focus:border-yellow-600 outline-none h-32 text-white"></textarea>
-                    <button type="submit" class="md:col-span-2 bg-yellow-600 hover:bg-yellow-500 text-black font-black py-4 rounded-xl uppercase tracking-widest transition-all">
-                        Place Custom Order
-                    </button>
-                </form>
             </section>
 
-            <footer class="mt-20 py-8 border-t border-stone-800 text-center text-stone-600 text-xs">
-                &copy; 2026 Wurm Merchant Hub. All rights reserved.
-            </footer>
+            <section class="lg:col-span-2">
+                <div class="dashboard-card p-6 rounded-2xl">
+                    <h3 class="text-lg font-bold mb-6">Your Active Listings</h3>
+                    <div id="my-inventory" class="space-y-4 text-sm text-stone-500">
+                        Loading your warehouse...
+                    </div>
+                </div>
+            </section>
         </div>
-    </main>
+    </div>
 
-    <script src="app.js"></script>
+    <script src="dashboard.js"></script>
 </body>
 </html>
