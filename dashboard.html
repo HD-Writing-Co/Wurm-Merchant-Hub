@@ -19,14 +19,14 @@
         <section class="bg-stone-900 p-6 rounded-xl border border-stone-800 mb-10">
             <h2 class="text-xl mb-4">Add New Inventory</h2>
             <form id="add-item-form" class="grid grid-cols-2 gap-4">
-                <input type="text" id="new-item-name" placeholder="Item Name" class="bg-black p-3 rounded border border-stone-700" required>
-                <select id="new-item-cat" class="bg-black p-3 rounded border border-stone-700">
+                <input type="text" id="item-name" placeholder="Item Name" class="bg-black p-3 rounded border border-stone-700" required>
+                <select id="item-cat" class="bg-black p-3 rounded border border-stone-700">
                     <option value="Carpentry">Carpentry</option>
                     <option value="Mining">Mining</option>
                     <option value="Digging">Digging</option>
                 </select>
-                <input type="number" id="new-item-ql" placeholder="Quality (QL)" class="bg-black p-3 rounded border border-stone-700" required>
-                <input type="text" id="new-item-price" placeholder="Price (e.g. 1s 50c)" class="bg-black p-3 rounded border border-stone-700" required>
+                <input type="number" id="item-ql" placeholder="Quality (QL)" class="bg-black p-3 rounded border border-stone-700" required>
+                <input type="text" id="item-price" placeholder="Price (e.g. 1s 50c)" class="bg-black p-3 rounded border border-stone-700" required>
                 <button type="submit" class="bg-yellow-600 text-black font-bold rounded p-3 hover:bg-yellow-500 transition-colors">List Item</button>
             </form>
         </section>
