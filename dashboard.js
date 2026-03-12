@@ -135,7 +135,11 @@ document.getElementById('add-item-form').addEventListener('submit', async (e) =>
 
 // --- LISTING DISPLAY ---
 async function loadMyItems(userId) {
-    const { data } = await client.from('products').select('*').eq('user_id', userId).order('created_at', { ascending: false });
+    // Ensure this line looks exactly like this:
+    const { data } = await client.from('products')
+        .select('*')
+     .eq('user_id', userId) // <-- Make sure this matches your column name
+     .order('created_at', { ascending: false });
     const container = document.getElementById('my-inventory');
     
     if (data && data.length > 0) {
