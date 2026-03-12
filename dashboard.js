@@ -10,7 +10,7 @@ async function initDashboard() {
     loadMyItems(user.id);
 }
 
-// PROFILE LOGIC
+// --- PROFILE LOGIC ---
 async function loadProfile(userId) {
     const { data } = await client.from('profiles').select('*').eq('id', userId).single();
     if (data) {
@@ -29,7 +29,6 @@ window.saveProfile = async () => {
         bio: document.getElementById('char-bio').value,
         updated_at: new Date()
     };
-
     const { error } = await client.from('profiles').upsert(updates);
     if (error) alert(error.message);
     else alert("Profile updated successfully!");
@@ -37,61 +36,116 @@ window.saveProfile = async () => {
 
 window.signOut = async () => { await client.auth.signOut(); window.location.replace('index.html'); };
 
+// --- EDIT & DELETE LOGIC ---
+window.startEdit = async (itemId) => {
+    const { data, error } = await client.from('products').select('*').eq('id', itemId).single();
+    if (error) return;
+
+    // We store the ID in a hidden attribute on the form or a global variable
+    const form = document.getElementById('add-item-form');
+    form.dataset.editId = data.id;
+
+    // Fill the fields
+    document.getElementById('item-name').value = data.item_name;
+    document.getElementById('item-cat').value = data.category;
+    document.getElementById('item-ql').value = data.base_ql || '';
+    document.getElementById('item-rarity').value = data.rarity;
+    document.getElementById('price-g').value = data.price_g;
+    document.getElementById('price-s').value = data.price_s;
+    document.getElementById('price-c').value = data.price_c;
+    document.getElementById('price-i').value = data.price_i;
+
+    // UI Feedback
+    const submitBtn = form.querySelector('button[type="submit"]');
+    submitBtn.innerText = "Update Listing";
+    submitBtn.classList.replace('bg-yellow-600', 'bg-blue-600');
+    
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+};
+
 window.deleteItem = async (itemId) => {
     if (confirm("Remove this listing?")) {
         const { error } = await client.from('products').delete().eq('id', itemId);
         if (error) alert("Error: " + error.message);
-        else window.location.reload();
+        else {
+            const { data: { user } } = await client.auth.getUser();
+            loadMyItems(user.id);
+        }
     }
 };
 
+// --- FORM SUBMISSION (Create or Update) ---
 document.getElementById('add-item-form').addEventListener('submit', async (e) => {
     e.preventDefault();
     const { data: { user } } = await client.auth.getUser();
+    const editId = e.target.dataset.editId;
     
-    const newItem = {
+    const itemData = {
         user_id: user.id,
         seller_id: user.id,
         item_name: document.getElementById('item-name').value, 
         category: document.getElementById('item-cat').value,
-        base_ql: parseInt(document.getElementById('item-ql').value),
-		rarity: document.getElementById('item-rarity').value,
+        base_ql: parseInt(document.getElementById('item-ql').value) || 0,
+        rarity: document.getElementById('item-rarity').value,
         price_g: parseInt(document.getElementById('price-g').value) || 0,
         price_s: parseInt(document.getElementById('price-s').value) || 0,
         price_c: parseInt(document.getElementById('price-c').value) || 0,
         price_i: parseInt(document.getElementById('price-i').value) || 0
     };
 
-    const { error } = await client.from('products').insert([newItem]);
-
-    if (error) {
-        alert("Error saving: " + error.message);
+    let result;
+    if (editId) {
+        // Update mode
+        result = await client.from('products').update(itemData).eq('id', editId);
     } else {
-        alert("Success! Item is now live.");
+        // Create mode
+        result = await client.from('products').insert([itemData]);
+    }
+
+    if (result.error) {
+        alert("Error saving: " + result.error.message);
+    } else {
+        alert(editId ? "Listing updated!" : "Success! Item is now live.");
         e.target.reset();
+        delete e.target.dataset.editId;
+        
+        // Reset button
+        const btn = e.target.querySelector('button[type="submit"]');
+        btn.innerText = "List Item on Hub";
+        btn.classList.replace('bg-blue-600', 'bg-yellow-600');
+        
         loadMyItems(user.id);
     }
 });
 
+// --- LOAD ITEMS ---
 async function loadMyItems(userId) {
-    const { data } = await client.from('products').select('*').eq('user_id', userId);
+    const { data, error } = await client.from('products').select('*').eq('user_id', userId);
     const container = document.getElementById('my-inventory');
     
+    if (error) {
+        console.error(error);
+        return;
+    }
+
     if (data && data.length > 0) {
         container.innerHTML = data.map(item => {
             const p = `${item.price_g}g ${item.price_s}s ${item.price_c}c ${item.price_i}i`;
             return `
-            <div class="flex justify-between items-center bg-stone-900/50 p-4 rounded-xl border border-stone-800">
+            <div class="flex justify-between items-center bg-stone-900/50 p-4 rounded-xl border border-stone-800 mb-3">
                 <div>
                     <span class="text-white font-bold">${item.item_name}</span>
                     <span class="text-yellow-600 ml-2">${item.base_ql} QL</span>
-                    <p class="text-[10px] text-stone-500">${item.category} • ${p}</p>
+                    <p class="text-[10px] text-stone-500 uppercase">${item.category} • ${p}</p>
                 </div>
-                <button onclick="deleteItem(${item.id})" class="text-red-900 hover:text-red-500 text-xs font-bold uppercase">Remove</button>
+                <div class="flex gap-4">
+                    <button onclick="startEdit(${item.id})" class="text-stone-400 hover:text-white text-xs font-bold uppercase transition-colors">Edit</button>
+                    <button onclick="deleteItem(${item.id})" class="text-red-900 hover:text-red-500 text-xs font-bold uppercase transition-colors">Remove</button>
+                </div>
             </div>`;
         }).join('');
     } else {
-        container.innerHTML = "<p class='text-stone-600 italic'>No active listings.</p>";
+        container.innerHTML = "<p class='text-stone-600 italic text-center py-6'>No active listings.</p>";
     }
 }
 
