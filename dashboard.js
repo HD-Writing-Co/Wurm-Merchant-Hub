@@ -29,7 +29,6 @@ window.saveProfile = async () => {
         bio: document.getElementById('char-bio').value,
         updated_at: new Date()
     };
-
     const { error } = await client.from('profiles').upsert(updates);
     if (error) alert(error.message);
     else alert("Profile updated successfully!");
@@ -84,14 +83,14 @@ document.getElementById('add-item-form').addEventListener('submit', async (e) =>
     const editId = document.getElementById('edit-item-id').value;
     
     const qlInput = document.getElementById('item-ql').value;
-    const newItem = {
+    const itemData = {
         user_id: user.id,
         seller_id: user.id,
         item_name: document.getElementById('item-name').value, 
         category: document.getElementById('item-cat').value,
         base_ql: qlInput ? parseInt(qlInput) : null,
         quantity: document.getElementById('item-qty').value || null,
-		rarity: document.getElementById('item-rarity').value,
+        rarity: document.getElementById('item-rarity').value,
         price_g: parseInt(document.getElementById('price-g').value) || 0,
         price_s: parseInt(document.getElementById('price-s').value) || 0,
         price_c: parseInt(document.getElementById('price-c').value) || 0,
@@ -100,9 +99,9 @@ document.getElementById('add-item-form').addEventListener('submit', async (e) =>
 
     let result;
     if (editId) {
-        result = await client.from('products').update(newItem).eq('id', editId);
+        result = await client.from('products').update(itemData).eq('id', editId);
     } else {
-        result = await client.from('products').insert([newItem]);
+        result = await client.from('products').insert([itemData]);
     }
 
     if (result.error) {
@@ -115,29 +114,34 @@ document.getElementById('add-item-form').addEventListener('submit', async (e) =>
 });
 
 async function loadMyItems(userId) {
-    const { data } = await client.from('products').select('*').eq('user_id', userId).order('created_at', { ascending: false });
+    const { data, error } = await client.from('products').select('*').eq('user_id', userId).order('created_at', { ascending: false });
     const container = document.getElementById('my-inventory');
     
+    if (error) {
+        console.error(error);
+        return;
+    }
+
     if (data && data.length > 0) {
         container.innerHTML = data.map(item => {
             const p = `${item.price_g}g ${item.price_s}s ${item.price_c}c ${item.price_i}i`;
             const qlText = item.base_ql ? `${item.base_ql} QL` : 'Bulk';
             const qtyText = item.quantity ? ` | Stock: ${item.quantity}` : '';
             return `
-            <div class="flex justify-between items-center bg-stone-900/50 p-4 rounded-xl border border-stone-800">
+            <div class="flex justify-between items-center bg-stone-900/50 p-4 rounded-xl border border-stone-800 mb-3">
                 <div>
                     <span class="text-white font-bold">${item.item_name}</span>
                     <span class="text-yellow-600 ml-2">${qlText}${qtyText}</span>
-                    <p class="text-[10px] text-stone-500">${item.category} • ${p}</p>
+                    <p class="text-[10px] text-stone-500 uppercase">${item.category} • ${p}</p>
                 </div>
                 <div class="flex gap-4">
-                    <button onclick="startEdit(${item.id})" class="text-stone-400 hover:text-white text-xs font-bold uppercase">Edit</button>
-                    <button onclick="deleteItem(${item.id})" class="text-red-900 hover:text-red-500 text-xs font-bold uppercase">Remove</button>
+                    <button onclick="startEdit(${item.id})" class="text-stone-400 hover:text-white text-xs font-bold uppercase transition-colors">Edit</button>
+                    <button onclick="deleteItem(${item.id})" class="text-red-900 hover:text-red-500 text-xs font-bold uppercase transition-colors">Remove</button>
                 </div>
             </div>`;
         }).join('');
     } else {
-        container.innerHTML = "<p class='text-stone-600 italic'>No active listings.</p>";
+        container.innerHTML = "<p class='text-stone-600 italic text-center py-6'>No active listings.</p>";
     }
 }
 
