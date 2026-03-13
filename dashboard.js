@@ -10,7 +10,7 @@ async function initDashboard() {
     loadMyItems(user.id);
 }
 
-// PROFILE LOGIC
+// PROFILE
 async function loadProfile(userId) {
     const { data } = await client.from('profiles').select('*').eq('id', userId).single();
     if (data) {
@@ -22,21 +22,20 @@ async function loadProfile(userId) {
 
 window.saveProfile = async () => {
     const { data: { user } } = await client.auth.getUser();
-    const updates = {
+    const { error } = await client.from('profiles').upsert({
         id: user.id,
         character_name: document.getElementById('char-name').value,
         server_name: document.getElementById('char-server').value,
         bio: document.getElementById('char-bio').value,
         updated_at: new Date()
-    };
-    const { error } = await client.from('profiles').upsert(updates);
+    });
     if (error) alert(error.message);
-    else alert("Profile updated successfully!");
+    else alert("Profile updated!");
 };
 
 window.signOut = async () => { await client.auth.signOut(); window.location.replace('index.html'); };
 
-// EDIT LOGIC
+// LISTING LOGIC (EDIT/ADD)
 window.startEdit = async (itemId) => {
     const { data, error } = await client.from('products').select('*').eq('id', itemId).single();
     if (error) return;
@@ -69,7 +68,7 @@ window.resetForm = () => {
 window.deleteItem = async (itemId) => {
     if (confirm("Remove this listing?")) {
         const { error } = await client.from('products').delete().eq('id', itemId);
-        if (error) alert("Error: " + error.message);
+        if (error) alert(error.message);
         else {
             const { data: { user } } = await client.auth.getUser();
             loadMyItems(user.id);
@@ -82,13 +81,12 @@ document.getElementById('add-item-form').addEventListener('submit', async (e) =>
     const { data: { user } } = await client.auth.getUser();
     const editId = document.getElementById('edit-item-id').value;
     
-    const qlInput = document.getElementById('item-ql').value;
     const itemData = {
         user_id: user.id,
         seller_id: user.id,
         item_name: document.getElementById('item-name').value, 
         category: document.getElementById('item-cat').value,
-        base_ql: qlInput ? parseInt(qlInput) : null,
+        base_ql: parseInt(document.getElementById('item-ql').value) || null,
         quantity: document.getElementById('item-qty').value || null,
         rarity: document.getElementById('item-rarity').value,
         price_g: parseInt(document.getElementById('price-g').value) || 0,
@@ -97,16 +95,12 @@ document.getElementById('add-item-form').addEventListener('submit', async (e) =>
         price_i: parseInt(document.getElementById('price-i').value) || 0
     };
 
-    let result;
-    if (editId) {
-        result = await client.from('products').update(itemData).eq('id', editId);
-    } else {
-        result = await client.from('products').insert([itemData]);
-    }
+    let result = editId 
+        ? await client.from('products').update(itemData).eq('id', editId)
+        : await client.from('products').insert([itemData]);
 
-    if (result.error) {
-        alert("Error saving: " + result.error.message);
-    } else {
+    if (result.error) alert(result.error.message);
+    else {
         alert(editId ? "Listing updated!" : "Success! Item is now live.");
         resetForm();
         loadMyItems(user.id);
@@ -114,32 +108,22 @@ document.getElementById('add-item-form').addEventListener('submit', async (e) =>
 });
 
 async function loadMyItems(userId) {
-    const { data, error } = await client.from('products').select('*').eq('user_id', userId).order('created_at', { ascending: false });
+    const { data } = await client.from('products').select('*').eq('user_id', userId).order('created_at', { ascending: false });
     const container = document.getElementById('my-inventory');
     
-    if (error) {
-        console.error(error);
-        return;
-    }
-
     if (data && data.length > 0) {
-        container.innerHTML = data.map(item => {
-            const p = `${item.price_g}g ${item.price_s}s ${item.price_c}c ${item.price_i}i`;
-            const qlText = item.base_ql ? `${item.base_ql} QL` : 'Bulk';
-            const qtyText = item.quantity ? ` | Stock: ${item.quantity}` : '';
-            return `
-            <div class="flex justify-between items-center bg-stone-900/50 p-4 rounded-xl border border-stone-800 mb-3">
+        container.innerHTML = data.map(item => `
+            <div class="flex justify-between items-center bg-stone-900/50 p-4 rounded-xl border border-stone-800 mb-2">
                 <div>
                     <span class="text-white font-bold">${item.item_name}</span>
-                    <span class="text-yellow-600 ml-2">${qlText}${qtyText}</span>
-                    <p class="text-[10px] text-stone-500 uppercase">${item.category} • ${p}</p>
+                    <span class="text-yellow-600 ml-2">${item.base_ql || 'Bulk'} QL ${item.quantity ? '| Stock: ' + item.quantity : ''}</span>
+                    <p class="text-[10px] text-stone-500 uppercase">${item.category} • ${item.price_g}g ${item.price_s}s</p>
                 </div>
                 <div class="flex gap-4">
-                    <button onclick="startEdit(${item.id})" class="text-stone-400 hover:text-white text-xs font-bold uppercase transition-colors">Edit</button>
-                    <button onclick="deleteItem(${item.id})" class="text-red-900 hover:text-red-500 text-xs font-bold uppercase transition-colors">Remove</button>
+                    <button onclick="startEdit(${item.id})" class="text-stone-400 hover:text-white text-xs font-bold uppercase">Edit</button>
+                    <button onclick="deleteItem(${item.id})" class="text-red-900 hover:text-red-500 text-xs font-bold uppercase">Remove</button>
                 </div>
-            </div>`;
-        }).join('');
+            </div>`).join('');
     } else {
         container.innerHTML = "<p class='text-stone-600 italic text-center py-6'>No active listings.</p>";
     }

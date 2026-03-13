@@ -3,7 +3,7 @@ const _url = 'https://gjftmhvteylhtlwcouwg.supabase.co';
 const _key = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdqZnRtaHZ0ZXlsaHRsd2NvdXdnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg5MTg5MDUsImV4cCI6MjA4NDQ5NDkwNX0.SBELcOhXZrm8fWHTaC1Ujjo-ZL7qUelFjxs7hmWGY5k';
 const client = createClient(_url, _key);
 
-let allProducts = []; // Stores all items for instant filtering
+let allProducts = []; // This stores everything for the filters to use
 
 async function checkUser() {
     const { data: { user } } = await client.auth.getUser();
@@ -30,24 +30,29 @@ async function loadInventory() {
         .order('created_at', { ascending: false });
 
     if (!error) {
-        allProducts = data; 
-        renderGrid(data);
+        allProducts = data; // Save the data here
+        renderGrid(data);   // Show everything first
     }
 }
 
-// Global filter function for sidebar categories
+// THE FILTER FUNCTION
 window.filterByCategory = (category) => {
-    if (category === 'all') {
-        renderGrid(allProducts);
-    } else {
-        const filtered = allProducts.filter(item => item.category === category);
-        renderGrid(filtered);
-    }
+    // If 'all', show everything. Otherwise, filter by the category name.
+    const filtered = category === 'all' 
+        ? allProducts 
+        : allProducts.filter(item => item.category === category);
+    
+    renderGrid(filtered);
 };
 
 function renderGrid(products) {
     const grid = document.getElementById('inventory-grid');
     grid.innerHTML = ''; 
+
+    if (products.length === 0) {
+        grid.innerHTML = `<p class="col-span-full text-center py-20 text-stone-600 italic">No items found in this category.</p>`;
+        return;
+    }
 
     products.forEach(item => {
         let priceParts = [];
@@ -59,7 +64,7 @@ function renderGrid(products) {
         
         const qlDisplay = item.base_ql ? `${item.base_ql} QL` : "Bulk";
         
-        // Repositioned Stock Badge to prevent overlap with Server name
+        // Stock Badge positioned below name to prevent overlap
         const qtyBadge = item.quantity ? `<div class="mt-2 inline-block bg-stone-800 px-2 py-1 rounded text-[10px] font-bold text-stone-300 border border-stone-700 uppercase">Stock: ${item.quantity}</div>` : '';
 
         grid.innerHTML += `
