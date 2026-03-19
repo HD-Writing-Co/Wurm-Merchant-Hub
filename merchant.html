@@ -1,100 +1,53 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Merchant Profile | Wurm Hub</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
-        body { background-color: #0f0f0f; color: #e5d5b5; font-family: 'Inter', sans-serif; }
-        .wurm-card { background: linear-gradient(145deg, #2a2a2a, #1a1a1a); border: 1px solid rgba(212, 175, 55, 0.1); transition: all 0.3s ease; }
-        .wurm-card:hover { border-color: #d4af37; transform: translateY(-2px); }
-        .gold-text { color: #d4af37; }
-    </style>
-</head>
-<body class="flex min-h-screen">
-    <aside class="w-72 bg-[#161616] border-r border-stone-800 p-8 flex flex-col h-screen sticky top-0">
-        <h1 class="text-2xl font-black gold-text italic mb-8 uppercase tracking-tighter">Wurm Hub</h1>
-        <a href="index.html" class="flex items-center gap-2 text-xs font-bold text-stone-500 hover:text-yellow-500 mb-12 uppercase tracking-widest">
-            <i data-lucide="arrow-left" class="w-4 h-4"></i> Back to Market
-        </a>
-        <div id="merchant-sidebar-info" class="space-y-4">
-            <h2 id="merchant-name" class="text-3xl font-black text-white uppercase italic tracking-tighter leading-tight">Loading...</h2>
-            <div id="merchant-server" class="text-yellow-600 text-[10px] font-black uppercase tracking-widest bg-yellow-900/20 px-2 py-1 inline-block rounded border border-yellow-700/30">Server</div>
-            <p id="merchant-bio" class="text-stone-500 text-sm italic pt-4 border-t border-stone-800">Retrieving bio...</p>
-        </div>
-    </aside>
+<script>
+    // ... Supabase Init ...
 
-    <main class="flex-1 p-12 bg-[#0f0f0f]">
-        <div class="max-w-5xl mx-auto">
-            <div class="mb-12">
-                <div class="inline-block bg-stone-900/30 p-6 rounded-2xl border border-stone-800">
-                    <p class="text-[10px] font-bold text-stone-600 uppercase mb-1 tracking-widest">Active Listings</p>
-                    <h3 id="stat-count" class="text-4xl font-black text-white italic">0</h3>
-                </div>
-            </div>
-            <div id="merchant-grid" class="grid grid-cols-1 md:grid-cols-2 gap-8"></div>
-        </div>
-    </main>
+    function renderMerchantGrid(products, sellerName, serverName) {
+        const grid = document.getElementById('merchant-grid');
+        grid.innerHTML = products.map(item => {
+            let priceText = ""; // Plain text for clipboard
+            let priceHtml = ""; // Styled HTML for card
+            if (item.price_g > 0) { priceText += `${item.price_g}g `; priceHtml += `<span class="text-yellow-500">${item.price_g}g</span> `; }
+            if (item.price_s > 0) { priceText += `${item.price_s}s `; priceHtml += `<span class="text-stone-300">${item.price_s}s</span> `; }
+            if (item.price_c > 0 || priceText === "") { priceText += `${item.price_c}c`; priceHtml += `<span class="text-orange-700">${item.price_c}c</span>`; }
 
-    <script>
-        const { createClient } = supabase;
-        const _url = 'https://gjftmhvteylhtlwcouwg.supabase.co';
-        const _key = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdqZnRtaHZ0ZXlsaHRsd2NvdXdnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg5MTg5MDUsImV4cCI6MjA4NDQ5NDkwNX0.SBELcOhXZrm8fWHTaC1Ujjo-ZL7qUelFjxs7hmWGY5k';
-        const client = createClient(_url, _key);
+            return `
+                <div class="wurm-card rounded-3xl p-8 flex flex-col justify-between min-h-[320px]">
+                    <div>
+                        <div class="flex justify-between mb-6">
+                            <div class="w-14 h-14 rounded-2xl bg-stone-900 border border-stone-800 flex items-center justify-center text-stone-500"><i data-lucide="${iconMap[item.category] || 'box'}" class="w-7 h-7"></i></div>
+                            <button onclick="copyTell('${sellerName}', '${item.item_name}', '${priceText}')" class="flex items-center gap-2 px-4 py-2 bg-yellow-600/10 hover:bg-yellow-600 text-yellow-600 hover:text-black rounded-xl border border-yellow-600/20 transition-all font-bold text-[10px] uppercase">
+                                <i data-lucide="copy" class="w-4 h-4"></i> Copy Tell
+                            </button>
+                        </div>
+                        <h4 class="text-white font-extrabold text-2xl mb-4">${item.item_name}</h4>
+                        <div class="flex gap-2">
+                            <div class="px-3 py-1 bg-black rounded border border-stone-800 text-[10px] text-stone-500 uppercase font-black">QL: <span class="text-yellow-500">${item.base_ql || '??'}</span></div>
+                        </div>
+                    </div>
+                    <div class="mt-10 pt-6 border-t border-stone-900 flex justify-between items-center">
+                        <div class="text-2xl font-black italic tracking-tighter">${priceHtml}</div>
+                        <button onclick="sendOfflineMessage('${item.seller_id}', '${item.item_name}')" class="p-4 bg-stone-900 hover:bg-stone-800 text-stone-500 rounded-2xl border border-stone-800"><i data-lucide="mail" class="w-5 h-5"></i></button>
+                    </div>
+                </div>`;
+        }).join('');
+    }
 
-        const iconMap = {
-            'Carpentry': 'hammer', 'Smithing': 'anvil', 'Mining': 'pickaxe', 'Masonry': 'bricks',
-            'Tailoring': 'scissors', 'Farming': 'wheat', 'Cooking': 'utensils', 'Jewelry': 'gem',
-            'Alchemy': 'flask-conical', 'Shipbuilding': 'ship', 'Animal Husbandry': 'horse', 'Misc': 'box'
-        };
+    window.copyTell = (seller, item, price) => {
+        const cmd = `/tell ${seller} wtb ${item} for ${price}`;
+        navigator.clipboard.writeText(cmd);
+        alert("Wurm command copied to clipboard!");
+    };
 
-        async function load() {
-            const sellerId = new URLSearchParams(window.location.search).get('id');
-            if (!sellerId) return;
-
-            const { data: prof } = await client.from('profiles').select('*').eq('id', sellerId).single();
-            if (prof) {
-                document.getElementById('merchant-name').innerText = prof.character_name;
-                document.getElementById('merchant-server').innerText = prof.server_name;
-                document.getElementById('merchant-bio').innerText = prof.bio || "No description.";
-            }
-
-            const { data: products } = await client.from('products').select('*').eq('seller_id', sellerId);
-            if (products) {
-                document.getElementById('stat-count').innerText = products.length;
-                document.getElementById('merchant-grid').innerHTML = products.map(item => {
-                    let price = "";
-                    if (item.price_g > 0) price += `${item.price_g}g `;
-                    if (item.price_s > 0) price += `${item.price_s}s `;
-                    if (item.price_c > 0 || price === "") price += `${item.price_c}c`;
-                    const icon = iconMap[item.category] || 'box';
-
-                    return `
-                        <div class="wurm-card rounded-2xl p-6 flex flex-col justify-between min-h-[280px]">
-                            <div>
-                                <div class="w-12 h-12 rounded-xl bg-stone-800/50 border border-stone-700/50 flex items-center justify-center mb-6"><i data-lucide="${icon}" class="w-6 h-6 text-stone-400"></i></div>
-                                <span class="text-[9px] font-black uppercase text-yellow-600 tracking-[0.2em] mb-1 block">${item.category}</span>
-                                <h4 class="text-white font-bold text-xl mb-4">${item.item_name}</h4>
-                                <div class="flex gap-2">
-                                    <div class="px-2 py-1 bg-black/20 rounded border border-stone-800 text-[10px] text-stone-400">QL: <span class="text-yellow-500 font-mono">${item.base_ql || '??'}</span></div>
-                                    <div class="px-2 py-1 bg-black/20 rounded border border-stone-800 text-[10px] text-stone-400">Qty: <span class="text-stone-200 font-mono">${item.quantity || '1'}</span></div>
-                                </div>
-                            </div>
-                            <div class="mt-8 pt-4 border-t border-stone-800/50 flex justify-between items-end">
-                                <div><p class="text-[8px] font-black text-stone-600 uppercase mb-1">Price</p><div class="text-2xl font-black text-white italic tracking-tighter">${price}</div></div>
-                                <button onclick="navigator.clipboard.writeText('/tell ${prof.character_name} wtb ${item.item_name} for ${price}'); alert('Copied tell command!')" 
-                                        class="p-3 bg-stone-800 hover:bg-yellow-600 text-stone-400 hover:text-black rounded-xl transition-all"><i data-lucide="message-square" class="w-5 h-5"></i></button>
-                            </div>
-                        </div>`;
-                }).join('');
-            }
-            if (window.lucide) lucide.createIcons();
+    window.sendOfflineMessage = async (sellerId, itemName) => {
+        const msg = prompt(`The merchant might be offline. Leave a message about the ${itemName}:`);
+        if (msg) {
+            const { error } = await client.from('inquiries').insert([{ 
+                seller_id: sellerId, 
+                item_name: itemName, 
+                message: msg,
+                created_at: new Date()
+            }]);
+            if (!error) alert("Message sent to merchant's dashboard!");
         }
-        document.addEventListener('DOMContentLoaded', load);
-    </script>
-</body>
-</html>
+    };
+</script>

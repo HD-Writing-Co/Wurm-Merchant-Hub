@@ -3,58 +3,59 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Wurm Merchant Hub</title>
+    <title>Wurm Hub | Global Market</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
-        body { background-color: #0f0f0f; color: #e5d5b5; font-family: 'Inter', sans-serif; }
+        body { background-color: #0b0b0b; color: #e5d5b5; font-family: 'Inter', sans-serif; }
         .wurm-card {
-            background: linear-gradient(145deg, #2a2a2a, #1a1a1a);
-            border: 1px solid rgba(212, 175, 55, 0.1);
-            transition: all 0.3s ease;
+            background: #141414;
+            border: 1px solid #222;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
         }
-        .wurm-card:hover { transform: translateY(-5px); border-color: #d4af37; box-shadow: 0 0 15px rgba(212, 175, 55, 0.2); }
-        .gold-text { color: #d4af37; }
-        .ad-banner { background: #161616; border: 1px dashed #3d3225; display: flex; align-items: center; justify-content: center; color: #3d3225; font-size: 10px; text-transform: uppercase; letter-spacing: 2px; }
+        .wurm-card:hover {
+            border-color: #d4af37;
+            transform: translateY(-8px);
+            background: #1a1a1a;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.6), 0 0 20px rgba(212, 175, 55, 0.1);
+        }
+        .gold-gradient { background: linear-gradient(to right, #d4af37, #f4cf67); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .price-tag { background: rgba(0,0,0,0.4); border: 1px solid rgba(212, 175, 55, 0.2); border-radius: 8px; }
     </style>
 </head>
 <body class="flex min-h-screen">
-    <aside class="w-72 bg-[#161616] border-r border-stone-800 flex flex-col sticky top-0 h-screen overflow-y-auto">
+    <aside class="w-72 bg-[#0f0f0f] border-r border-stone-900 flex flex-col sticky top-0 h-screen">
         <div class="p-8 flex flex-col h-full">
-            <h1 class="text-2xl font-black gold-text tracking-tighter mb-8 italic uppercase">WURM HUB</h1>
+            <h1 class="text-2xl font-black gold-gradient tracking-tighter mb-10 italic uppercase">WURM HUB</h1>
             <div id="nav-auth" class="mb-8">
-                <a href="login.html" class="block p-4 rounded-xl bg-stone-900 border border-stone-800 hover:border-yellow-700/50 transition-all">
-                    <p class="text-[10px] text-stone-600 font-bold uppercase mb-2">Merchant Portal</p>
-                    <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 rounded-full bg-yellow-900/20 border border-yellow-700/50 flex items-center justify-center"><i data-lucide="log-in" class="w-5 h-5 text-yellow-500"></i></div>
-                        <div><div class="text-sm font-bold text-stone-200">Sign In</div><div class="text-[10px] text-stone-500 italic">Manage Inventory</div></div>
-                    </div>
-                </a>
-            </div>
-            <div class="mt-auto"><div class="ad-banner w-full h-64 rounded-lg px-4">Sidebar Ad Slot</div></div>
+                </div>
+            <div class="mt-auto opacity-30 text-[10px] uppercase font-black tracking-[0.2em] text-center border-t border-stone-900 pt-8">Marketplace v2.1</div>
         </div>
     </aside>
 
-    <main class="flex-1 bg-[#0f0f0f]">
-        <div class="max-w-6xl mx-auto p-8">
-            <div class="flex gap-12 mb-10 pb-8 border-b border-stone-800/50">
-                <div><p class="text-[10px] font-black uppercase text-stone-600 tracking-widest mb-1">Total Listings</p><h2 id="stat-items" class="text-3xl font-black text-white italic">0</h2></div>
-                <div><p class="text-[10px] font-black uppercase text-stone-600 tracking-widest mb-1">Active Sellers</p><h2 id="stat-sellers" class="text-3xl font-black text-white italic">0</h2></div>
-                <div><p class="text-[10px] font-black uppercase text-stone-600 tracking-widest mb-1">Servers</p><h2 id="stat-servers" class="text-3xl font-black text-white italic">1</h2></div>
-            </div>
-
-            <header class="flex justify-between items-center mb-12">
-                <div><h2 class="text-3xl font-bold text-white tracking-tight">Market Catalog</h2><p class="text-stone-500 text-sm">Browsing items from verified merchants.</p></div>
-                <div class="flex gap-3 w-full max-w-md">
-                    <input type="text" id="search-bar" placeholder="Search items..." class="w-full bg-stone-900 border border-stone-800 p-3 rounded-xl text-sm outline-none focus:border-yellow-700/50">
+    <main class="flex-1 p-10">
+        <div class="max-w-6xl mx-auto">
+            <div class="grid grid-cols-3 gap-8 mb-16">
+                <div class="p-6 bg-[#111] rounded-2xl border border-stone-900">
+                    <p class="text-[10px] font-black uppercase text-stone-600 tracking-widest mb-1">Total Listings</p>
+                    <h2 id="stat-items" class="text-4xl font-black text-white italic italic">0</h2>
                 </div>
-            </header>
-
-            <div id="inventory-grid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                <div class="col-span-full py-20 text-center text-stone-600 italic uppercase text-xs tracking-widest">Scanning Network...</div>
+                <div class="p-6 bg-[#111] rounded-2xl border border-stone-900">
+                    <p class="text-[10px] font-black uppercase text-stone-600 tracking-widest mb-1">Active Sellers</p>
+                    <h2 id="stat-sellers" class="text-4xl font-black text-white italic italic">0</h2>
+                </div>
+                <div class="p-6 bg-[#111] rounded-2xl border border-stone-900 text-yellow-600">
+                    <p class="text-[10px] font-black uppercase text-stone-700 tracking-widest mb-1">Servers</p>
+                    <h2 class="text-4xl font-black italic">1</h2>
+                </div>
             </div>
+
+            <div id="inventory-grid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
+                </div>
         </div>
     </main>
 
@@ -74,11 +75,18 @@
             const { data: { session } } = await client.auth.getSession();
             if (session) {
                 document.getElementById('nav-auth').innerHTML = `
-                    <a href="dashboard.html" class="block p-4 rounded-xl bg-yellow-900/10 border border-yellow-700/30 hover:border-yellow-500 transition-all">
-                        <p class="text-[10px] text-yellow-600 font-bold uppercase mb-2">Merchant Portal</p>
-                        <div class="flex items-center gap-3">
-                            <div class="w-10 h-10 rounded-full bg-yellow-600 flex items-center justify-center"><i data-lucide="layout-dashboard" class="w-5 h-5 text-black"></i></div>
-                            <div><div class="text-sm font-bold text-white">Dashboard</div><div class="text-[10px] text-green-500 font-black uppercase tracking-widest">Online</div></div>
+                    <a href="dashboard.html" class="block p-5 rounded-2xl bg-yellow-900/5 border border-yellow-700/20 hover:border-yellow-500/50 transition-all group">
+                        <div class="flex items-center gap-4">
+                            <div class="w-12 h-12 rounded-xl bg-yellow-600 flex items-center justify-center shadow-[0_0_15px_rgba(202,138,4,0.3)]"><i data-lucide="layout-dashboard" class="w-6 h-6 text-black"></i></div>
+                            <div><p class="text-white font-bold text-sm group-hover:text-yellow-500 transition-colors">Dashboard</p><p class="text-[10px] text-green-500 font-black uppercase tracking-tighter">Merchant Online</p></div>
+                        </div>
+                    </a>`;
+            } else {
+                document.getElementById('nav-auth').innerHTML = `
+                    <a href="login.html" class="block p-5 rounded-2xl bg-stone-900 border border-stone-800 hover:border-yellow-700/50 transition-all group">
+                        <div class="flex items-center gap-4">
+                            <div class="w-12 h-12 rounded-xl bg-stone-800 border border-stone-700 flex items-center justify-center group-hover:bg-yellow-900/20"><i data-lucide="log-in" class="w-6 h-6 text-stone-500 group-hover:text-yellow-500"></i></div>
+                            <div><p class="text-white font-bold text-sm">Sign In</p><p class="text-[10px] text-stone-600 font-black uppercase tracking-tighter">Access Portal</p></div>
                         </div>
                     </a>`;
             }
@@ -93,26 +101,31 @@
                 
                 document.getElementById('inventory-grid').innerHTML = products.map(item => {
                     const prof = profileMap[item.seller_id] || { character_name: 'Merchant', server_name: 'Unknown' };
-                    let price = "";
-                    if (item.price_g > 0) price += `${item.price_g}g `;
-                    if (item.price_s > 0) price += `${item.price_s}s `;
-                    if (item.price_c > 0 || price === "") price += `${item.price_c}c`;
+                    let priceHtml = "";
+                    if (item.price_g > 0) priceHtml += `<span class="text-yellow-500">${item.price_g}g</span> `;
+                    if (item.price_s > 0) priceHtml += `<span class="text-stone-300">${item.price_s}s</span> `;
+                    if (item.price_c > 0 || priceHtml === "") priceHtml += `<span class="text-orange-700">${item.price_c}c</span>`;
                     const icon = iconMap[item.category] || 'box';
 
                     return `
-                        <div class="wurm-card rounded-2xl p-6 flex flex-col justify-between min-h-[280px]">
+                        <div class="wurm-card rounded-3xl p-8 flex flex-col justify-between min-h-[340px]">
                             <div>
-                                <div class="flex justify-between items-start mb-6">
-                                    <div class="w-12 h-12 rounded-xl bg-stone-800/50 border border-stone-700/50 flex items-center justify-center"><i data-lucide="${icon}" class="w-6 h-6 text-stone-400"></i></div>
-                                    <span class="text-[9px] font-black uppercase text-stone-600 tracking-widest">${prof.server_name}</span>
+                                <div class="flex justify-between items-start mb-8">
+                                    <div class="w-14 h-14 rounded-2xl bg-stone-900 border border-stone-800 flex items-center justify-center text-stone-500 shadow-inner"><i data-lucide="${icon}" class="w-7 h-7"></i></div>
+                                    <span class="text-[10px] font-black uppercase text-stone-700 tracking-[0.2em] bg-black/40 px-3 py-1 rounded-full border border-stone-900">${prof.server_name}</span>
                                 </div>
-                                <span class="text-[9px] font-black uppercase text-yellow-600 tracking-[0.2em] mb-1 block">${item.category}</span>
-                                <h4 class="text-white font-bold text-xl mb-2">${item.item_name}</h4>
-                                <p class="text-[10px] text-stone-500 font-bold uppercase italic">Seller: ${prof.character_name}</p>
+                                <span class="text-[10px] font-black uppercase text-yellow-600 tracking-[0.3em] mb-2 block">${item.category}</span>
+                                <h4 class="text-white font-extrabold text-2xl tracking-tight mb-4">${item.item_name}</h4>
+                                <div class="flex gap-3">
+                                    <div class="px-3 py-1.5 bg-black rounded-lg border border-stone-900 text-[10px] font-bold text-stone-500 uppercase">QL <span class="text-yellow-500 ml-1 font-mono">${item.base_ql || '??'}</span></div>
+                                    <div class="px-3 py-1.5 bg-black rounded-lg border border-stone-800 text-[10px] font-bold text-stone-500 uppercase">Stock <span class="text-white ml-1 font-mono">${item.quantity || '1'}</span></div>
+                                </div>
                             </div>
-                            <div class="mt-8 pt-4 border-t border-stone-800/50 flex justify-between items-end">
-                                <div><p class="text-[8px] font-black text-stone-600 uppercase mb-1">Price</p><div class="text-2xl font-black text-white italic">${price}</div></div>
-                                <a href="merchant.html?id=${item.seller_id}" class="p-3 bg-stone-800 hover:bg-yellow-600 text-stone-400 hover:text-black rounded-xl transition-all"><i data-lucide="external-link" class="w-5 h-5"></i></a>
+                            <div class="mt-10 pt-6 border-t border-stone-900/50 flex justify-between items-center">
+                                <div><p class="text-[9px] font-black text-stone-700 uppercase mb-1 tracking-widest">Market Price</p><div class="text-2xl font-black italic tracking-tighter">${priceHtml}</div></div>
+                                <div class="flex gap-2">
+                                    <a href="merchant.html?id=${item.seller_id}" class="p-4 bg-stone-900 hover:bg-stone-800 text-stone-500 hover:text-white rounded-2xl transition-all border border-stone-800"><i data-lucide="user" class="w-5 h-5"></i></a>
+                                </div>
                             </div>
                         </div>`;
                 }).join('');
