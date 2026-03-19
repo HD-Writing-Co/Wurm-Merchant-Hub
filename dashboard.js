@@ -112,7 +112,8 @@ document.getElementById('add-item-form').addEventListener('submit', async (e) =>
     const editId = document.getElementById('edit-item-id').value;
     
     const itemData = {
-        seller_id: user.id,
+        user_id: user.id,   // Original legacy field
+        seller_id: user.id, // NEW field for proper joins
         item_name: document.getElementById('item-name').value, 
         category: document.getElementById('item-cat').value,
         base_ql: parseInt(document.getElementById('item-ql').value) || null,
