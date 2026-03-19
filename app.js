@@ -92,68 +92,61 @@ function renderGrid(products) {
     const grid = document.getElementById('inventory-grid');
     grid.innerHTML = ''; 
 
-    if (products.length === 0) {
-        grid.innerHTML = `<div class="col-span-full py-20 text-center text-stone-600 italic">No matching items found in the Hub.</div>`;
-        return;
-    }
-
     products.forEach(item => {
-        // Price Formatting
+        // Price Calculation
         let priceParts = [];
         if (item.price_g > 0) priceParts.push(`${item.price_g}g`);
         if (item.price_s > 0) priceParts.push(`${item.price_s}s`);
         if (item.price_c > 0) priceParts.push(`${item.price_c}c`);
-        if (item.price_i > 0) priceParts.push(`${item.price_i}i`);
         const finalPrice = priceParts.length > 0 ? priceParts.join(' ') : "Offer";
         
-        const qlDisplay = item.base_ql ? `${item.base_ql} QL` : "Bulk";
-        const sellerName = item.profiles?.character_name || 'Unknown';
-        const serverName = item.profiles?.server_name || 'Cadence';
+        // Status Logic: Green if seen in the last 5 minutes
+        const lastSeen = new Date(item.profiles?.last_seen);
+        const isOnline = (new Date() - lastSeen) < 300000; // 5 minutes in milliseconds
+        const statusColor = isOnline ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]' : 'bg-stone-700';
 
         grid.innerHTML += `
-            <div class="wurm-card overflow-hidden rounded-2xl border border-stone-800 bg-stone-900/40 flex flex-col">
-                <div class="h-24 bg-stone-800/30 flex items-center justify-center relative border-b border-stone-800">
-                    <span class="absolute top-3 left-3 text-[9px] font-black uppercase tracking-widest text-yellow-600 bg-black/60 px-2 py-0.5 rounded border border-yellow-900/30">
-                        ${item.category}
-                    </span>
-                    <span class="absolute top-3 right-3 text-[9px] font-bold text-stone-500 uppercase">
-                        ${serverName}
-                    </span>
-                    <i data-lucide="package" class="w-8 h-8 text-stone-700"></i>
+            <div class="wurm-card overflow-hidden rounded-2xl border border-stone-800 bg-stone-900/40 flex flex-col relative">
+                <div class="p-6 pb-0">
+                    <div class="flex justify-between items-start mb-4">
+                        <span class="text-[10px] uppercase text-yellow-600 font-bold tracking-widest">${item.category}</span>
+                        <span class="text-[9px] text-stone-500 uppercase font-bold">${item.profiles?.server_name || 'Cadence'}</span>
+                    </div>
+                    <div class="flex items-center justify-center h-24 mb-4">
+                         <i data-lucide="package" class="w-12 h-12 text-stone-800"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white mb-6 leading-tight">${item.item_name}</h3>
                 </div>
 
-                <div class="p-6 flex-grow">
-                    <h3 class="text-xl font-bold text-white mb-4 truncate">${item.item_name}</h3>
-
-                    <div class="grid grid-cols-2 gap-3 mb-6">
-                        <div class="bg-black/30 p-2 rounded-lg border border-stone-800/50">
-                            <p class="text-[8px] uppercase text-stone-600 font-bold mb-1">In Stock</p>
-                            <p class="text-xs font-mono text-stone-300">${item.quantity || '∞'}</p>
-                        </div>
-                        <div class="bg-black/30 p-2 rounded-lg border border-stone-800/50">
-                            <p class="text-[8px] uppercase text-stone-600 font-bold mb-1">Quality</p>
-                            <p class="text-xs font-mono text-yellow-600">${qlDisplay}</p>
-                        </div>
+                <div class="px-6 grid grid-cols-2 gap-3 mb-6">
+                    <div class="bg-black/30 p-3 rounded-xl border border-stone-800/50">
+                        <p class="text-[8px] uppercase text-stone-600 font-bold mb-1">In Stock</p>
+                        <p class="text-xs font-mono text-stone-300">${item.quantity || '1'}</p>
                     </div>
+                    <div class="bg-black/30 p-3 rounded-xl border border-stone-800/50">
+                        <p class="text-[8px] uppercase text-stone-600 font-bold mb-1">Quality</p>
+                        <p class="text-xs font-mono text-yellow-600">${item.base_ql ? item.base_ql + ' QL' : 'Bulk'}</p>
+                    </div>
+                </div>
 
-                    <div class="flex justify-between items-end border-t border-white/5 pt-4">
+                <div class="mt-auto p-6 pt-4 border-t border-white/5">
+                    <div class="flex justify-between items-end mb-4">
                         <div>
                             <p class="text-[9px] uppercase text-stone-600 font-bold mb-1">Asking Price</p>
-                            <div class="text-xl font-black text-white">${finalPrice}</div>
+                            <div class="text-2xl font-black text-white">${finalPrice}</div>
                         </div>
-                        <button onclick="copyWurmCommand('${sellerName}', '${item.item_name}', '${finalPrice}', '${serverName}')" 
-                                class="p-3 bg-stone-800 hover:bg-yellow-600 text-stone-500 hover:text-black rounded-xl transition-all shadow-lg"
-                                title="Copy /tell command">
-                            <i data-lucide="message-square" class="w-4 h-4"></i>
+                        <button onclick="copyWurmCommand('${item.profiles?.character_name}', '${item.item_name}', '${finalPrice}', '${item.profiles?.server_name}')" 
+                                class="p-3 bg-stone-800 hover:bg-yellow-600 text-stone-500 hover:text-black rounded-xl transition-all">
+                            <i data-lucide="message-square" class="w-5 h-5"></i>
                         </button>
                     </div>
-                </div>
-
-                <div class="px-6 py-3 bg-black/20 border-t border-stone-800 flex justify-between items-center text-[10px]">
-                    <span class="text-stone-500 font-bold uppercase tracking-tighter">
-                        Merchant: <span class="text-stone-300 underline cursor-pointer" onclick="window.location.href='merchant.html?id=${item.seller_id}'">${sellerName}</span>
-                    </span>
-                    <div class="w-2 h-2 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.4)]"></div>
+                    
+                    <div class="flex justify-between items-center pt-4 border-t border-white/5">
+                        <span class="text-[10px] text-stone-500 font-bold uppercase tracking-tighter">
+                            Merchant: <a href="merchant.html?id=${item.seller_id}" class="text-stone-300 underline underline-offset-2">${item.profiles?.character_name || 'Nefig'}</a>
+                        </span>
+                        <div class="w-2.5 h-2.5 rounded-full ${statusColor}" title="${isOnline ? 'Online' : 'Offline'}"></div>
+                    </div>
                 </div>
             </div>`;
     });
