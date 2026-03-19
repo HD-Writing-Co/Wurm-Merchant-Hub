@@ -7,14 +7,27 @@ async function initDashboard() {
     const { data: { user } } = await client.auth.getUser();
     if (!user) { window.location.href = 'login.html'; return; }
     
-    // AUTO-FIX: Ensure all your existing items have a seller_id
-    await client.from('products').update({ seller_id: user.id }).eq('user_id', user.id).is('seller_id', null);
+    // --- CRITICAL AUTO-FIX ---
+    // This updates any old items that are missing the 'seller_id'
+    await client
+        .from('products')
+        .update({ seller_id: user.id })
+        .eq('user_id', user.id)
+        .is('seller_id', null);
     
     loadProfile(user.id);
     loadMyItems(user.id);
+    
+    // Status Heartbeat
+    updateOnlineStatus(user.id);
+    setInterval(() => updateOnlineStatus(user.id), 30000);
 }
 
-// ... (keep loadProfile, saveProfile, and startEdit exactly as you have them)
+async function updateOnlineStatus(userId) {
+    await client.from('profiles').update({ last_seen: new Date().toISOString() }).eq('id', userId);
+}
+
+// ... [Keep loadProfile and saveProfile the same] ...
 
 document.getElementById('add-item-form').addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -22,8 +35,8 @@ document.getElementById('add-item-form').addEventListener('submit', async (e) =>
     const editId = document.getElementById('edit-item-id').value;
     
     const itemData = {
-        user_id: user.id,   // Legacy support
-        seller_id: user.id, // REQUIRED for Merchant Page
+        seller_id: user.id, // Ensure this is saved for the Merchant Page
+        user_id: user.id,
         item_name: document.getElementById('item-name').value, 
         category: document.getElementById('item-cat').value,
         base_ql: parseInt(document.getElementById('item-ql').value) || null,
@@ -47,7 +60,6 @@ document.getElementById('add-item-form').addEventListener('submit', async (e) =>
 });
 
 async function loadMyItems(userId) {
-    // We check seller_id to be consistent with the rest of the app
     const { data } = await client.from('products').select('*').eq('seller_id', userId).order('created_at', { ascending: false });
     const container = document.getElementById('my-inventory');
     
@@ -59,8 +71,8 @@ async function loadMyItems(userId) {
                     <span class="text-yellow-600 ml-2">${item.base_ql || 'Bulk'} QL</span>
                 </div>
                 <div class="flex gap-4">
-                    <button onclick="startEdit(${item.id})" class="text-stone-400 hover:text-white uppercase text-xs">Edit</button>
-                    <button onclick="deleteItem(${item.id})" class="text-red-900 hover:text-red-500 uppercase text-xs">Remove</button>
+                    <button onclick="startEdit(${item.id})" class="text-stone-400 hover:text-white uppercase text-xs font-bold">Edit</button>
+                    <button onclick="deleteItem(${item.id})" class="text-red-900 hover:text-red-500 uppercase text-xs font-bold">Remove</button>
                 </div>
             </div>`).join('');
     } else {
