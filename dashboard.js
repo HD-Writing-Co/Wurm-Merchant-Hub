@@ -5,10 +5,14 @@ const client = createClient(_url, _key);
 
 async function initDashboard() {
     const { data: { user } } = await client.auth.getUser();
-    if (!user) { window.location.href = 'login.html'; return; }
-    
+    if (!user) { 
+        window.location.href = 'login.html'; 
+        return; 
+    }
+
     // --- CRITICAL AUTO-FIX ---
-    // This updates any old items that are missing the 'seller_id'
+    // This updates any old items that are missing the 'seller_id' 
+    // so they appear on your merchant page.
     await client
         .from('products')
         .update({ seller_id: user.id })
@@ -17,17 +21,76 @@ async function initDashboard() {
     
     loadProfile(user.id);
     loadMyItems(user.id);
-    
-    // Status Heartbeat
-    updateOnlineStatus(user.id);
-    setInterval(() => updateOnlineStatus(user.id), 30000);
 }
 
-async function updateOnlineStatus(userId) {
-    await client.from('profiles').update({ last_seen: new Date().toISOString() }).eq('id', userId);
+// PROFILE MANAGEMENT
+async function loadProfile(userId) {
+    const { data } = await client.from('profiles').select('*').eq('id', userId).single();
+    if (data) {
+        document.getElementById('char-name').value = data.character_name || '';
+        document.getElementById('char-server').value = data.server_name || 'Cadence';
+        document.getElementById('char-bio').value = data.bio || '';
+    }
 }
 
-// ... [Keep loadProfile and saveProfile the same] ...
+window.saveProfile = async () => {
+    const { data: { user } } = await client.auth.getUser();
+    const { error } = await client.from('profiles').upsert({
+        id: user.id,
+        character_name: document.getElementById('char-name').value,
+        server_name: document.getElementById('char-server').value,
+        bio: document.getElementById('char-bio').value,
+        updated_at: new Date()
+    });
+    if (error) alert(error.message);
+    else alert("Profile updated!");
+};
+
+window.signOut = async () => { 
+    await client.auth.signOut(); 
+    window.location.replace('index.html'); 
+};
+
+// LISTING LOGIC (ADD/EDIT/DELETE)
+window.startEdit = async (itemId) => {
+    const { data, error } = await client.from('products').select('*').eq('id', itemId).single();
+    if (error) return;
+
+    document.getElementById('edit-item-id').value = data.id;
+    document.getElementById('item-name').value = data.item_name;
+    document.getElementById('item-cat').value = data.category;
+    document.getElementById('item-ql').value = data.base_ql || '';
+    document.getElementById('item-qty').value = data.quantity || '';
+    document.getElementById('item-rarity').value = data.rarity;
+    document.getElementById('price-g').value = data.price_g;
+    document.getElementById('price-s').value = data.price_s;
+    document.getElementById('price-c').value = data.price_c;
+    document.getElementById('price-i').value = data.price_i || 0;
+
+    document.getElementById('form-title').innerText = "Edit Listing";
+    document.getElementById('submit-btn').innerText = "Update Listing";
+    document.getElementById('cancel-edit').classList.remove('hidden');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+};
+
+window.resetForm = () => {
+    document.getElementById('add-item-form').reset();
+    document.getElementById('edit-item-id').value = "";
+    document.getElementById('form-title').innerText = "Add New Inventory";
+    document.getElementById('submit-btn').innerText = "List Item on Hub";
+    document.getElementById('cancel-edit').classList.add('hidden');
+};
+
+window.deleteItem = async (itemId) => {
+    if (confirm("Remove this listing?")) {
+        const { error } = await client.from('products').delete().eq('id', itemId);
+        if (error) alert(error.message);
+        else {
+            const { data: { user } } = await client.auth.getUser();
+            loadMyItems(user.id);
+        }
+    }
+};
 
 document.getElementById('add-item-form').addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -35,8 +98,8 @@ document.getElementById('add-item-form').addEventListener('submit', async (e) =>
     const editId = document.getElementById('edit-item-id').value;
     
     const itemData = {
-        seller_id: user.id, // Ensure this is saved for the Merchant Page
         user_id: user.id,
+        seller_id: user.id, // Links item to your Merchant Page
         item_name: document.getElementById('item-name').value, 
         category: document.getElementById('item-cat').value,
         base_ql: parseInt(document.getElementById('item-ql').value) || null,
@@ -44,7 +107,8 @@ document.getElementById('add-item-form').addEventListener('submit', async (e) =>
         rarity: document.getElementById('item-rarity').value,
         price_g: parseInt(document.getElementById('price-g').value) || 0,
         price_s: parseInt(document.getElementById('price-s').value) || 0,
-        price_c: parseInt(document.getElementById('price-c').value) || 0
+        price_c: parseInt(document.getElementById('price-c').value) || 0,
+        price_i: parseInt(document.getElementById('price-i').value) || 0
     };
 
     let result = editId 
@@ -53,14 +117,20 @@ document.getElementById('add-item-form').addEventListener('submit', async (e) =>
 
     if (result.error) alert(result.error.message);
     else {
-        alert("Inventory Updated!");
+        alert(editId ? "Listing updated!" : "Success! Item is now live.");
         resetForm();
         loadMyItems(user.id);
     }
 });
 
 async function loadMyItems(userId) {
-    const { data } = await client.from('products').select('*').eq('seller_id', userId).order('created_at', { ascending: false });
+    // Queries by seller_id to match the public Merchant page logic
+    const { data } = await client
+        .from('products')
+        .select('*')
+        .eq('seller_id', userId)
+        .order('created_at', { ascending: false });
+        
     const container = document.getElementById('my-inventory');
     
     if (data && data.length > 0) {
@@ -68,11 +138,16 @@ async function loadMyItems(userId) {
             <div class="flex justify-between items-center bg-stone-900/50 p-4 rounded-xl border border-stone-800 mb-2">
                 <div>
                     <span class="text-white font-bold">${item.item_name}</span>
-                    <span class="text-yellow-600 ml-2">${item.base_ql || 'Bulk'} QL</span>
+                    <span class="text-yellow-600 ml-2">
+                        ${item.base_ql || 'Bulk'} QL ${item.quantity ? '| Stock: ' + item.quantity : ''}
+                    </span>
+                    <p class="text-[10px] text-stone-500 uppercase">
+                        ${item.category} • ${item.price_g}g ${item.price_s}s ${item.price_c}c
+                    </p>
                 </div>
                 <div class="flex gap-4">
-                    <button onclick="startEdit(${item.id})" class="text-stone-400 hover:text-white uppercase text-xs font-bold">Edit</button>
-                    <button onclick="deleteItem(${item.id})" class="text-red-900 hover:text-red-500 uppercase text-xs font-bold">Remove</button>
+                    <button onclick="startEdit(${item.id})" class="text-stone-400 hover:text-white text-xs font-bold uppercase">Edit</button>
+                    <button onclick="deleteItem(${item.id})" class="text-red-900 hover:text-red-500 text-xs font-bold uppercase">Remove</button>
                 </div>
             </div>`).join('');
     } else {
