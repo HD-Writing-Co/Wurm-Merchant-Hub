@@ -11,9 +11,7 @@
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
         body { background-color: #0f0f0f; color: #e5d5b5; font-family: 'Inter', sans-serif; }
         .gold-text { color: #d4af37; }
-        .stat-card { background: #161616; border: 1px solid #262626; transition: all 0.3s ease; }
-        .merchant-card { background: linear-gradient(145deg, #1a1a1a, #111111); border: 1px solid #262626; }
-        .merchant-card:hover { border-color: #d4af37; transform: translateY(-2px); }
+        .stat-box { background-color: #161616; padding: 2rem; border-radius: 1rem; border: 1px solid #262626; }
     </style>
 </head>
 <body class="min-h-screen">
@@ -34,34 +32,29 @@
         </div>
     </nav>
 
-    <header class="max-w-7xl mx-auto px-8 py-12 border-y border-stone-900 grid grid-cols-1 md:grid-cols-3 gap-8">
-        <div class="stat-card p-8 rounded-2xl">
-            <p class="text-[10px] font-black text-stone-600 uppercase tracking-[0.2em] mb-2">Total Listings</p>
+    <header class="max-w-7xl mx-auto px-8 py-12 grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div class="stat-box">
+            <p class="text-[10px] font-black text-stone-600 uppercase tracking-widest mb-2">Total Listings</p>
             <h2 id="total-listings-count" class="text-5xl font-black text-white italic">0</h2>
         </div>
-        <div class="stat-card p-8 rounded-2xl">
-            <p class="text-[10px] font-black text-stone-600 uppercase tracking-[0.2em] mb-2">Active Sellers</p>
+        <div class="stat-box">
+            <p class="text-[10px] font-black text-stone-600 uppercase tracking-widest mb-2">Active Sellers</p>
             <h2 id="active-sellers-count" class="text-5xl font-black text-white italic">0</h2>
         </div>
-        <div class="stat-card p-8 rounded-2xl">
-            <p class="text-[10px] font-black text-stone-600 uppercase tracking-[0.2em] mb-2">Connected Servers</p>
-            <h2 class="text-5xl font-black text-yellow-600 italic">1</h2>
+        <div class="stat-box">
+            <p class="text-[10px] font-black text-stone-600 uppercase tracking-widest mb-2">Servers</p>
+            <h2 class="text-5xl font-black text-white italic">1</h2>
         </div>
     </header>
 
     <main class="max-w-7xl mx-auto p-8">
-        <div class="flex justify-between items-end mb-12">
-            <div>
-                <h2 class="text-xs font-black text-yellow-600 uppercase tracking-[0.3em] mb-2">Verified Merchants</h2>
-                <h3 class="text-4xl font-bold text-white tracking-tighter">Current Market Listings</h3>
-            </div>
+        <div class="mb-12">
+            <h2 class="text-xs font-black text-stone-600 uppercase tracking-[0.3em] mb-2">Verified Merchants</h2>
+            <h3 class="text-4xl font-bold text-white tracking-tighter">Current Market Listings</h3>
         </div>
 
         <div id="market-grid" class="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div class="col-span-full py-20 text-center text-stone-700 animate-pulse uppercase font-black tracking-widest text-xs">
-                Scanning Wurm Network...
             </div>
-        </div>
     </main>
 
     <script>
@@ -70,91 +63,49 @@
         const _key = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdqZnRtaHZ0ZXlsaHRsd2NvdXdnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg5MTg5MDUsImV4cCI6MjA4NDQ5NDkwNX0.SBELcOhXZrm8fWHTaC1Ujjo-ZL7qUelFjxs7hmWGY5k';
         const client = createClient(_url, _key);
 
-        // Map categories to Lucide icons
-        const categoryIcons = {
-            'Carpentry': 'hammer',
-            'Mining': 'pickaxe',
-            'Smithing': 'anvil',
-            'Masonry': 'bricks',
-            'Cooking': 'utensils',
-            'Tailoring': 'scissors',
-            'Farming': 'wheat',
-            'Misc': 'box'
-        };
-
-        async function initFrontPage() {
-            // 1. Check Auth for Header
+        async function init() {
+            // 1. Live Auth Button
             const { data: { user } } = await client.auth.getUser();
             if (user) {
                 document.getElementById('auth-status-area').innerHTML = `
                     <a href="dashboard.html" class="flex items-center gap-4 group">
-                        <div class="p-3 border border-green-900/30 rounded-full bg-green-900/10 group-hover:border-green-500 transition-all">
-                            <i data-lucide="layout-dashboard" class="w-5 h-5 text-green-500"></i>
+                        <div class="p-3 border border-yellow-600/30 rounded-full group-hover:bg-yellow-600/10 transition-all">
+                            <i data-lucide="layout-dashboard" class="w-5 h-5 text-yellow-500"></i>
                         </div>
                         <div>
                             <p class="text-white font-bold uppercase tracking-tighter">Dashboard</p>
-                            <p class="text-green-600 text-[10px] font-black uppercase">Online</p>
+                            <p class="text-yellow-600 text-[10px] font-black uppercase">Online</p>
                         </div>
                     </a>`;
             }
 
-            // 2. Fetch Stats & Products
-            const { data: products, error } = await client.from('products').select('*');
-            if (error) return;
+            // 2. Load Stats and Market
+            const { data: products } = await client.from('products').select('*');
+            if (products) {
+                // Update stats
+                document.getElementById('total-listings-count').innerText = products.length;
+                const uniqueSellers = new Set(products.map(p => p.seller_id)).size;
+                document.getElementById('active-sellers-count').innerText = uniqueSellers;
 
-            // Update Stat Numbers
-            document.getElementById('total-listings-count').innerText = products.length;
-            const uniqueSellers = new Set(products.map(p => p.seller_id)).size;
-            document.getElementById('active-sellers-count').innerText = uniqueSellers;
-
-            renderMarket(products);
-        }
-
-        async function renderMarket(products) {
-            const grid = document.getElementById('market-grid');
-            if (!products || products.length === 0) {
-                grid.innerHTML = `<p class="col-span-full text-center text-stone-600 italic">No items currently for sale.</p>`;
-                return;
+                // Simple list of items
+                const grid = document.getElementById('market-grid');
+                grid.innerHTML = products.map(item => `
+                    <div class="bg-[#161616] p-6 rounded-2xl border border-stone-800">
+                        <span class="text-[9px] font-black text-yellow-600 uppercase tracking-widest">${item.category}</span>
+                        <h4 class="text-white font-bold text-lg mb-4">${item.item_name}</h4>
+                        <div class="flex justify-between items-center pt-4 border-t border-stone-800">
+                            <span class="text-xs text-stone-500 uppercase font-bold">Price</span>
+                            <span class="text-white font-black italic">${item.price_g}g ${item.price_s}s</span>
+                        </div>
+                        <a href="merchant.html?id=${item.seller_id}" class="mt-4 block text-center text-[10px] font-bold text-stone-600 hover:text-white uppercase tracking-tighter transition-colors">View Merchant Profile</a>
+                    </div>
+                `).join('');
             }
-
-            // Get profile names for the cards
-            const { data: profiles } = await client.from('profiles').select('id, character_name, server_name');
-            const profileMap = Object.fromEntries(profiles.map(p => [p.id, p]));
-
-            grid.innerHTML = products.map(item => {
-                const profile = profileMap[item.seller_id] || { character_name: 'Unknown', server_name: 'Unknown' };
-                const icon = categoryIcons[item.category] || 'package';
-                
-                return `
-                    <a href="merchant.html?id=${item.seller_id}" class="merchant-card rounded-2xl p-6 group">
-                        <div class="flex justify-between items-start mb-8">
-                            <div class="p-4 bg-stone-900 rounded-xl border border-stone-800 group-hover:border-yellow-600/50 transition-colors">
-                                <i data-lucide="${icon}" class="w-8 h-8 text-stone-600 group-hover:text-yellow-500 transition-colors"></i>
-                            </div>
-                            <div class="text-right">
-                                <span class="text-[10px] font-black text-yellow-700 uppercase tracking-widest">${item.category}</span>
-                                <h4 class="text-white font-bold">${item.item_name}</h4>
-                            </div>
-                        </div>
-                        
-                        <div class="flex justify-between items-end border-t border-stone-800/50 pt-4">
-                            <div>
-                                <p class="text-[8px] font-black text-stone-600 uppercase mb-1">Seller</p>
-                                <p class="text-sm font-bold text-stone-300 uppercase italic tracking-tighter">${profile.character_name}</p>
-                            </div>
-                            <div class="text-right">
-                                <p class="text-[8px] font-black text-stone-600 uppercase mb-1">Price</p>
-                                <p class="text-lg font-black text-white italic">${item.price_g}g ${item.price_s}s</p>
-                            </div>
-                        </div>
-                    </a>
-                `;
-            }).join('');
 
             if (window.lucide) lucide.createIcons();
         }
 
-        document.addEventListener('DOMContentLoaded', initFrontPage);
+        document.addEventListener('DOMContentLoaded', init);
     </script>
 </body>
 </html>
