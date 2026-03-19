@@ -10,63 +10,20 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
         body { background-color: #0b0b0b; color: #e5d5b5; font-family: 'Inter', sans-serif; }
-        .shop-card { background: #141414; border: 1px solid #222; border-radius: 1.5rem; padding: 2rem; }
-        .input-field { background: #0f0f0f; border: 1px solid #222; color: white; padding: 0.75rem; border-radius: 0.75rem; width: 100%; outline: none; }
     </style>
 </head>
-<body class="p-6 md:p-20">
-    <div class="max-w-4xl mx-auto">
-        <a href="index.html" class="inline-flex items-center gap-2 text-stone-500 hover:text-white mb-10 font-bold uppercase text-[10px] tracking-widest">
-            <i data-lucide="arrow-left" class="w-4 h-4"></i> Back to Market
+<body class="p-10 md:p-20">
+    <div class="max-w-5xl mx-auto">
+        <a href="index.html" class="text-3xl font-black italic text-white mb-16 uppercase tracking-tighter inline-block hover:opacity-80 transition-all">
+            WURM <span class="text-yellow-600">HUB</span>
         </a>
 
-        <div id="profile-header" class="mb-12">
-            <h1 id="m_name" class="text-4xl font-black italic text-white uppercase tracking-tighter">Loading...</h1>
-            <p id="m_server" class="text-yellow-600 font-bold uppercase tracking-widest text-xs mt-2"></p>
-            <p id="m_bio" class="text-stone-400 mt-4 max-w-xl italic"></p>
+        <div id="profile-header" class="mb-12 border-l-4 border-yellow-600 pl-8">
+            <h1 id="m_name" class="text-5xl font-black italic text-white uppercase tracking-tighter">Loading...</h1>
+            <p id="m_server" class="text-yellow-600 font-bold uppercase tracking-widest text-sm mt-2"></p>
+            <p id="m_bio" class="text-stone-400 mt-6 max-w-2xl leading-relaxed italic"></p>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-10">
-            <div class="md:col-span-2 space-y-4">
-                <h3 class="text-lg font-black text-white uppercase italic mb-6">Inventory</h3>
-                <div id="product-list" class="space-y-3"></div>
-            </div>
-            <div class="md:col-span-1">
-                <div class="shop-card sticky top-10">
-                    <h3 class="text-lg font-black text-white mb-6 uppercase italic">Contact Merchant</h3>
-                    <textarea id="msg_body" class="input-field h-32 mb-4" placeholder="I'm interested in..."></textarea>
-                    <button onclick="sendMessage()" class="w-full bg-yellow-600 text-black font-black p-3 rounded-xl hover:bg-yellow-500">Send Message</button>
-                </div>
-            </div>
         </div>
-    </div>
-
-    <script>
-        const { createClient } = supabase;
-        const client = createClient('https://gjftmhvteylhtlwcouwg.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdqZnRtaHZ0ZXlsaHRsd2NvdXdnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg5MTg5MDUsImV4cCI6MjA4NDQ5NDkwNX0.SBELcOhXZrm8fWHTaC1Ujjo-ZL7qUelFjxs7hmWGY5k');
-        
-        async function init() {
-            const params = new URLSearchParams(window.location.search);
-            const merchantId = params.get('merchant');
-            if (!merchantId) { window.location.href = 'index.html'; return; }
-
-            const { data: prof } = await client.from('profiles').select('*').eq('id', merchantId).single();
-            if (prof) {
-                document.getElementById('m_name').innerText = prof.character_name || "Unknown";
-                document.getElementById('m_server').innerText = prof.server_name || "";
-                document.getElementById('m_bio').innerText = prof.bio || "No bio available.";
-            }
-
-            const { data: items } = await client.from('products').select('*').eq('seller_id', merchantId);
-            const container = document.getElementById('product-list');
-            container.innerHTML = items?.map(item => `
-                <div class="p-5 bg-[#111] border border-stone-900 rounded-2xl flex justify-between items-center">
-                    <div><p class="text-white font-bold">${item.item_name} <span class="text-yellow-600 text-[10px] ml-2">QL ${item.base_ql}</span></p></div>
-                    <div class="font-mono text-xs text-yellow-500">${item.price_g}g ${item.price_s}s ${item.price_c}c</div>
-                </div>`).join('') || "No items.";
-            lucide.createIcons();
-        }
-        init();
-    </script>
 </body>
 </html>
