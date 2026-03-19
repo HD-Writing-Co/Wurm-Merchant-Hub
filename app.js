@@ -44,11 +44,24 @@ async function loadInventory() {
 function updateStats(products) {
     const itemStat = document.getElementById('stat-items');
     const sellerStat = document.getElementById('stat-sellers');
+    const serverStat = document.getElementById('stat-servers');
     
+    // Count Total Listings
     if (itemStat) itemStat.innerText = products.length;
-    if (sellerStat) {
+
+    if (products.length > 0) {
+        // Count Unique Sellers
         const uniqueSellers = [...new Set(products.map(p => p.seller_id))].length;
-        sellerStat.innerText = uniqueSellers;
+        if (sellerStat) sellerStat.innerText = uniqueSellers;
+
+        // NEW: Count Unique Servers
+        // We map through products, grab the server_name from the profile, 
+        // and use a Set to keep only unique values.
+        const uniqueServers = [...new Set(products.map(p => p.profiles?.server_name).filter(Boolean))].length;
+        if (serverStat) serverStat.innerText = uniqueServers;
+    } else {
+        if (sellerStat) sellerStat.innerText = "0";
+        if (serverStat) serverStat.innerText = "0";
     }
 }
 
