@@ -12,8 +12,6 @@
         body { background-color: #0b0b0b; color: #e5d5b5; font-family: 'Inter', sans-serif; }
         .shop-card { background: #141414; border: 1px solid #222; border-radius: 1.5rem; padding: 2rem; }
         .input-field { background: #0f0f0f; border: 1px solid #222; color: white; padding: 0.75rem; border-radius: 0.75rem; width: 100%; outline: none; }
-        .gold-btn { background: #d4af37; color: black; font-weight: 800; padding: 0.75rem; border-radius: 0.75rem; transition: all 0.3s; cursor: pointer; width: 100%; }
-        .gold-btn:hover { background: #f4cf67; transform: translateY(-2px); }
     </style>
 </head>
 <body class="p-6 md:p-20">
@@ -23,29 +21,21 @@
         </a>
 
         <div id="profile-header" class="mb-12">
-            <h1 id="m_name" class="text-4xl font-black italic text-white uppercase tracking-tighter">Loading Merchant...</h1>
+            <h1 id="m_name" class="text-4xl font-black italic text-white uppercase tracking-tighter">Loading...</h1>
             <p id="m_server" class="text-yellow-600 font-bold uppercase tracking-widest text-xs mt-2"></p>
-            <p id="m_bio" class="text-stone-400 mt-4 max-w-xl"></p>
+            <p id="m_bio" class="text-stone-400 mt-4 max-w-xl italic"></p>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-10">
             <div class="md:col-span-2 space-y-4">
                 <h3 class="text-lg font-black text-white uppercase italic mb-6">Inventory</h3>
-                <div id="product-list" class="space-y-3">
-                    <p class="text-stone-700 italic">Fetching items...</p>
-                </div>
+                <div id="product-list" class="space-y-3"></div>
             </div>
-
             <div class="md:col-span-1">
                 <div class="shop-card sticky top-10">
-                    <h3 class="text-lg font-black text-white mb-6 uppercase italic">Send Inquiry</h3>
-                    <div class="space-y-4">
-                        <div>
-                            <label class="text-[10px] font-black text-stone-600 uppercase mb-2 block">Your Message</label>
-                            <textarea id="msg_body" class="input-field w-full h-32" placeholder="Hi! I want to buy..."></textarea>
-                        </div>
-                        <button onclick="sendMessage()" class="gold-btn">Send Message</button>
-                    </div>
+                    <h3 class="text-lg font-black text-white mb-6 uppercase italic">Contact Merchant</h3>
+                    <textarea id="msg_body" class="input-field h-32 mb-4" placeholder="I'm interested in..."></textarea>
+                    <button onclick="sendMessage()" class="w-full bg-yellow-600 text-black font-black p-3 rounded-xl hover:bg-yellow-500">Send Message</button>
                 </div>
             </div>
         </div>
@@ -55,61 +45,27 @@
         const { createClient } = supabase;
         const client = createClient('https://gjftmhvteylhtlwcouwg.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdqZnRtaHZ0ZXlsaHRsd2NvdXdnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg5MTg5MDUsImV4cCI6MjA4NDQ5NDkwNX0.SBELcOhXZrm8fWHTaC1Ujjo-ZL7qUelFjxs7hmWGY5k');
         
-        const params = new URLSearchParams(window.location.search);
-        const merchantId = params.get('merchant');
-
         async function init() {
+            const params = new URLSearchParams(window.location.search);
+            const merchantId = params.get('merchant');
             if (!merchantId) { window.location.href = 'index.html'; return; }
-            
-            // Load Profile
+
             const { data: prof } = await client.from('profiles').select('*').eq('id', merchantId).single();
             if (prof) {
-                document.getElementById('m_name').innerText = prof.character_name || "Unknown Merchant";
-                document.getElementById('m_server').innerText = prof.server_name || "Unknown Server";
-                document.getElementById('m_bio').innerText = prof.bio || "No bio provided.";
+                document.getElementById('m_name').innerText = prof.character_name || "Unknown";
+                document.getElementById('m_server').innerText = prof.server_name || "";
+                document.getElementById('m_bio').innerText = prof.bio || "No bio available.";
             }
 
-            // Load Products
             const { data: items } = await client.from('products').select('*').eq('seller_id', merchantId);
             const container = document.getElementById('product-list');
-            if (!items || items.length === 0) {
-                container.innerHTML = "<p class='text-stone-700 italic'>No active listings.</p>";
-            } else {
-                container.innerHTML = items.map(item => `
-                    <div class="p-5 bg-[#111] border border-stone-900 rounded-2xl flex justify-between items-center">
-                        <div>
-                            <p class="text-white font-bold">${item.item_name} <span class="text-yellow-600 text-[10px] ml-2">QL ${item.base_ql}</span></p>
-                            <p class="text-[10px] uppercase text-stone-600">${item.category} • Qty: ${item.quantity}</p>
-                        </div>
-                        <div class="font-mono text-xs">
-                            ${item.price_g > 0 ? `<span class="text-yellow-500">${item.price_g}g</span>` : ''}
-                            ${item.price_s > 0 ? `<span class="text-stone-300 ml-1">${item.price_s}s</span>` : ''}
-                            ${item.price_c > 0 ? `<span class="text-orange-600 ml-1">${item.price_c}c</span>` : ''}
-                            ${item.price_i > 0 ? `<span class="text-stone-500 ml-1">${item.price_i}i</span>` : ''}
-                        </div>
-                    </div>
-                `).join('');
-            }
+            container.innerHTML = items?.map(item => `
+                <div class="p-5 bg-[#111] border border-stone-900 rounded-2xl flex justify-between items-center">
+                    <div><p class="text-white font-bold">${item.item_name} <span class="text-yellow-600 text-[10px] ml-2">QL ${item.base_ql}</span></p></div>
+                    <div class="font-mono text-xs text-yellow-500">${item.price_g}g ${item.price_s}s ${item.price_c}c</div>
+                </div>`).join('') || "No items.";
             lucide.createIcons();
         }
-
-        window.sendMessage = async () => {
-            const { data: { user } } = await client.auth.getUser();
-            if (!user) { alert("Please log in to send messages."); return; }
-            const msg = document.getElementById('msg_body').value;
-            if (!msg) return;
-
-            const { error } = await client.from('inquiries').insert([{
-                seller_id: merchantId,
-                sender_id: user.id,
-                sender_name: "Interested Buyer",
-                message: msg
-            }]);
-
-            if (error) alert(error.message);
-            else { alert("Message sent!"); document.getElementById('msg_body').value = ''; }
-        };
-
         init();
     </script>
 </body>

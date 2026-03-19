@@ -11,96 +11,55 @@
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
         body { background-color: #0b0b0b; color: #e5d5b5; font-family: 'Inter', sans-serif; }
         .dashboard-card { background: #141414; border: 1px solid #222; border-radius: 1.5rem; padding: 2rem; }
-        .input-field { background: #0f0f0f; border: 1px solid #222; color: white; padding: 0.75rem; border-radius: 0.75rem; width: 100%; outline: none; font-size: 0.875rem; }
-        .input-field:focus { border-color: #d4af37; }
-        .gold-btn { background: #d4af37; color: black; font-weight: 800; padding: 0.75rem 1.5rem; border-radius: 0.75rem; transition: all 0.3s; cursor: pointer; border: none; }
-        .gold-btn:hover { background: #f4cf67; transform: translateY(-2px); }
-        .message-pill { background: #1a1a1a; border-left: 4px solid #d4af37; transition: all 0.2s; }
-        
-        /* CROSS-BROWSER FIX FOR NUMBER SPINNERS */
-        input[type="number"] { -moz-appearance: textfield; } /* Firefox */
-        input[type="number"]::-webkit-inner-spin-button, 
-        input[type="number"]::-webkit-outer-spin-button { 
-            opacity: 1 !important; 
-            filter: invert(1) brightness(10); 
-            cursor: pointer;
-        }
+        .input-field { background: #0f0f0f; border: 1px solid #222; color: white; padding: 0.75rem; border-radius: 0.75rem; width: 100%; outline: none; }
+        .edit-mode { border: 2px solid #3b82f6 !important; }
     </style>
 </head>
 <body class="flex min-h-screen">
-
-    <aside class="w-72 bg-[#0f0f0f] border-r border-stone-900 p-8 flex flex-col h-screen sticky top-0">
-        <h1 class="text-2xl font-black italic text-white mb-10 uppercase tracking-tighter">WURM <span class="text-yellow-600">HUB</span></h1>
-        <nav class="space-y-4">
-            <a href="index.html" class="flex items-center gap-3 text-stone-500 hover:text-white transition-all font-bold uppercase text-[10px] tracking-widest">
-                <i data-lucide="arrow-left" class="w-4 h-4"></i> Back to Market
-            </a>
-            <button onclick="handleLogout()" class="flex items-center gap-3 text-red-900 hover:text-red-500 transition-all font-bold uppercase text-[10px] tracking-widest mt-10">
-                <i data-lucide="log-out" class="w-4 h-4"></i> Sign Out
-            </button>
-        </nav>
+    <aside class="w-72 border-r border-stone-900 p-8 flex flex-col h-screen sticky top-0 bg-[#0f0f0f]">
+        <h1 class="text-2xl font-black italic text-white mb-10 uppercase">WURM <span class="text-yellow-600">HUB</span></h1>
+        <button onclick="handleLogout()" class="text-red-900 font-bold uppercase text-[10px] tracking-widest mt-auto">Sign Out</button>
     </aside>
 
     <main class="flex-1 p-10">
         <div class="max-w-6xl mx-auto">
-            
             <section class="mb-10 dashboard-card">
                 <h3 class="text-lg font-black text-white mb-6 uppercase italic">Merchant Profile</h3>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div>
-                        <label class="text-[10px] font-black text-stone-600 uppercase mb-2 block">Name</label>
-                        <input type="text" id="prof_name" class="input-field" placeholder="Character Name">
-                    </div>
-                    <div>
-                        <label class="text-[10px] font-black text-stone-600 uppercase mb-2 block">Server</label>
-                        <select id="prof_server" class="input-field">
-                            <option value="Cadence">Cadence</option>
-                            <option value="Harmony">Harmony</option>
-                            <option value="Melody">Melody</option>
-                            <option value="Pristine">Pristine</option>
-                        </select>
-                    </div>
-                    <div class="flex items-end">
-                        <button onclick="updateProfile()" class="gold-btn w-full">Save Profile</button>
-                    </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <input type="text" id="prof_name" class="input-field" placeholder="Character Name">
+                    <select id="prof_server" class="input-field">
+                        <option value="Cadence">Cadence</option>
+                        <option value="Harmony">Harmony</option>
+                        <option value="Melody">Melody</option>
+                    </select>
+                    <textarea id="prof_bio" class="input-field md:col-span-2 h-20" placeholder="Merchant Bio..."></textarea>
+                    <button onclick="updateProfile()" class="bg-yellow-600 text-black font-black p-3 rounded-xl md:col-span-2">Save Profile</button>
                 </div>
             </section>
 
-            <section class="mb-10 dashboard-card">
-                <div class="flex justify-between items-center mb-6">
-                    <h3 class="text-lg font-black text-white uppercase italic">Customer Inquiries</h3>
-                    <span id="msg-count" class="bg-yellow-600 text-black text-[10px] font-black px-2 py-0.5 rounded-full">0</span>
-                </div>
-                <div id="message-container" class="space-y-4 max-h-64 overflow-y-auto pr-2"></div>
-            </section>
-            
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-10">
                 <div class="lg:col-span-1">
                     <div id="form-container" class="dashboard-card sticky top-10">
-                        <h3 id="form-title" class="text-lg font-black text-white mb-6 uppercase italic">Add Listing</h3>
+                        <h3 id="form-title" class="text-lg font-black text-white mb-6 uppercase italic">Manage Listing</h3>
                         <form id="product-form" class="space-y-4">
                             <input type="hidden" id="edit-id">
                             <input type="text" id="item_name" class="input-field" placeholder="Item Name" required>
-                            
-                            <div class="grid grid-cols-2 gap-4">
-                                <div><label class="text-[10px] text-stone-600 uppercase font-black mb-1 block">QL</label><input type="number" id="base_ql" class="input-field" value="50"></div>
-                                <div><label class="text-[10px] text-stone-600 uppercase font-black mb-1 block">Qty</label><input type="text" id="quantity" class="input-field" value="1"></div>
-                            </div>
-
-                            <label class="text-[10px] text-stone-600 uppercase font-black block">Price</label>
+                            <input type="number" id="base_ql" class="input-field" value="50">
+                            <input type="text" id="quantity" class="input-field" value="1">
                             <div class="grid grid-cols-4 gap-1">
-                                <input type="number" id="price_g" class="input-field !p-2 border-yellow-800" value="0">
-                                <input type="number" id="price_s" class="input-field !p-2 border-stone-700" value="0">
-                                <input type="number" id="price_c" class="input-field !p-2 border-orange-900" value="0">
-                                <input type="number" id="price_i" class="input-field !p-2 border-stone-800" value="0">
+                                <input type="number" id="price_g" class="input-field !p-1 text-center" value="0">
+                                <input type="number" id="price_s" class="input-field !p-1 text-center" value="0">
+                                <input type="number" id="price_c" class="input-field !p-1 text-center" value="0">
+                                <input type="number" id="price_i" class="input-field !p-1 text-center" value="0">
                             </div>
-                            <button type="submit" id="submit-btn" class="gold-btn">Post Listing</button>
+                            <button type="submit" id="submit-btn" class="w-full bg-yellow-600 text-black font-black p-3 rounded-xl">Post Listing</button>
+                            <button type="button" onclick="resetForm()" id="cancel-btn" class="hidden w-full text-stone-500 text-xs uppercase font-bold mt-2">Cancel Edit</button>
                         </form>
                     </div>
                 </div>
 
                 <div class="lg:col-span-2">
-                    <h3 class="text-lg font-black text-white mb-6 uppercase italic">Inventory</h3>
+                    <h3 class="text-lg font-black text-white mb-6 uppercase italic">Active Inventory</h3>
                     <div id="my-listings" class="space-y-3"></div>
                 </div>
             </div>
@@ -115,55 +74,51 @@
             const { data: { user } } = await client.auth.getUser();
             if (!user) { window.location.href = 'login.html'; return; }
             
-            const { data: profile } = await client.from('profiles').select('*').eq('id', user.id).maybeSingle();
-            if (profile) {
-                document.getElementById('prof_name').value = profile.character_name || "";
-                document.getElementById('prof_server').value = profile.server_name || "Cadence";
+            const { data: prof } = await client.from('profiles').select('*').eq('id', user.id).maybeSingle();
+            if (prof) {
+                document.getElementById('prof_name').value = prof.character_name || "";
+                document.getElementById('prof_server').value = prof.server_name || "Cadence";
+                document.getElementById('prof_bio').value = prof.bio || "";
             }
-            
             loadMyProducts(user.id);
-            loadMessages(user.id);
         }
-
-        async function loadMessages(userId) {
-            const { data } = await client.from('inquiries').select('*').eq('seller_id', userId).order('created_at', { ascending: false });
-            const container = document.getElementById('message-container');
-            if (!data || data.length === 0) { container.innerHTML = "<p class='text-stone-700 italic text-sm'>No messages.</p>"; return; }
-            document.getElementById('msg-count').innerText = data.length;
-            container.innerHTML = data.map(msg => `
-                <div class="p-4 rounded-xl message-pill flex justify-between">
-                    <div><p class="text-xs font-bold text-yellow-600 uppercase">${msg.sender_name}</p><p class="text-sm">${msg.message}</p></div>
-                    <button onclick="deleteMessage('${msg.id}')" class="text-stone-700 hover:text-red-500"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
-                </div>`).join('');
-            lucide.createIcons();
-        }
-
-        window.deleteMessage = async (id) => {
-            if (confirm('Delete inquiry?')) {
-                const { error } = await client.from('inquiries').delete().eq('id', id);
-                if (error) { alert("ERROR: " + error.message); console.error(error); }
-                else { const { data: { user } } = await client.auth.getUser(); loadMessages(user.id); }
-            }
-        };
 
         async function loadMyProducts(userId) {
             const { data } = await client.from('products').select('*').eq('seller_id', userId);
             const container = document.getElementById('my-listings');
-            if (!data || data.length === 0) { container.innerHTML = "<div class='p-10 text-center text-stone-700 italic border border-dashed border-stone-900 rounded-3xl'>No listings.</div>"; return; }
             container.innerHTML = data.map(item => `
-                <div class="p-5 bg-[#111] border border-stone-900 rounded-2xl flex justify-between items-center">
-                    <p class="text-white font-bold">${item.item_name} (QL ${item.base_ql})</p>
-                    <button onclick="deleteProduct('${item.id}')" class="text-stone-600 hover:text-red-500"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                <div class="p-4 bg-[#111] border border-stone-900 rounded-2xl flex justify-between items-center group">
+                    <div>
+                        <p class="text-white font-bold">${item.item_name} <span class="text-stone-600 text-xs">(QL ${item.base_ql})</span></p>
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick='editProduct(${JSON.stringify(item)})' class="p-2 text-stone-500 hover:text-blue-400"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
+                        <button onclick="deleteProduct('${item.id}')" class="p-2 text-stone-500 hover:text-red-500"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                    </div>
                 </div>`).join('');
             lucide.createIcons();
         }
 
-        window.deleteProduct = async (id) => {
-            if (confirm('Delete this item?')) {
-                const { error } = await client.from('products').delete().eq('id', id);
-                if (error) alert("DELETE FAILED: " + error.message);
-                else { const { data: { user } } = await client.auth.getUser(); loadMyProducts(user.id); }
-            }
+        window.editProduct = (item) => {
+            document.getElementById('form-container').classList.add('edit-mode');
+            document.getElementById('edit-id').value = item.id;
+            document.getElementById('item_name').value = item.item_name;
+            document.getElementById('base_ql').value = item.base_ql;
+            document.getElementById('quantity').value = item.quantity;
+            document.getElementById('price_g').value = item.price_g;
+            document.getElementById('price_s').value = item.price_s;
+            document.getElementById('price_c').value = item.price_c;
+            document.getElementById('price_i').value = item.price_i;
+            document.getElementById('submit-btn').innerText = "Update Listing";
+            document.getElementById('cancel-btn').classList.remove('hidden');
+        };
+
+        window.resetForm = () => {
+            document.getElementById('product-form').reset();
+            document.getElementById('edit-id').value = "";
+            document.getElementById('form-container').classList.remove('edit-mode');
+            document.getElementById('submit-btn').innerText = "Post Listing";
+            document.getElementById('cancel-btn').classList.add('hidden');
         };
 
         window.updateProfile = async () => {
@@ -172,15 +127,16 @@
                 id: user.id,
                 character_name: document.getElementById('prof_name').value,
                 server_name: document.getElementById('prof_server').value,
+                bio: document.getElementById('prof_bio').value,
                 updated_at: new Date()
             });
             if (!error) alert("Profile Saved!");
-            else alert("Error: " + error.message);
         };
 
         document.getElementById('product-form').onsubmit = async (e) => {
             e.preventDefault();
             const { data: { user } } = await client.auth.getUser();
+            const editId = document.getElementById('edit-id').value;
             const itemData = {
                 item_name: document.getElementById('item_name').value,
                 base_ql: parseFloat(document.getElementById('base_ql').value),
@@ -191,9 +147,20 @@
                 price_i: parseInt(document.getElementById('price_i').value) || 0,
                 seller_id: user.id
             };
-            await client.from('products').insert([itemData]);
+
+            if (editId) await client.from('products').update(itemData).eq('id', editId);
+            else await client.from('products').insert([itemData]);
+            
+            resetForm();
             loadMyProducts(user.id);
-            e.target.reset();
+        };
+
+        window.deleteProduct = async (id) => {
+            if (confirm('Delete?')) {
+                await client.from('products').delete().eq('id', id);
+                const { data: { user } } = await client.auth.getUser();
+                loadMyProducts(user.id);
+            }
         };
 
         window.handleLogout = async () => { await client.auth.signOut(); window.location.href = 'index.html'; };
