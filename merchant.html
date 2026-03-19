@@ -10,8 +10,7 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
         body { background-color: #0f0f0f; color: #e5d5b5; font-family: 'Inter', sans-serif; }
-        .wurm-card { background: linear-gradient(145deg, #2a2a2a, #1a1a1a); border: 1px solid rgba(212, 175, 55, 0.1); transition: all 0.3s ease; }
-        .wurm-card:hover { border-color: #d4af37; transform: translateY(-2px); }
+        .wurm-card { background: linear-gradient(145deg, #2a2a2a, #1a1a1a); border: 1px solid rgba(212, 175, 55, 0.1); }
         .gold-text { color: #d4af37; }
     </style>
 </head>
@@ -23,16 +22,16 @@
         </a>
         
         <div id="merchant-sidebar-info" class="space-y-4">
-            <h2 id="merchant-name" class="text-2xl font-bold text-white uppercase italic tracking-tighter leading-tight">Loading...</h2>
+            <h2 id="merchant-name" class="text-2xl font-bold text-white uppercase italic tracking-tighter">Loading...</h2>
             <div id="merchant-server" class="text-yellow-600 text-[10px] font-black uppercase tracking-widest bg-yellow-900/20 px-2 py-1 inline-block rounded border border-yellow-700/30">Server</div>
             <p id="merchant-bio" class="text-stone-500 text-sm italic leading-relaxed pt-4 border-t border-stone-800">Retrieving bio...</p>
         </div>
     </aside>
 
-    <main class="flex-1 p-12 bg-[#0f0f0f]">
+    <main class="flex-1 p-12">
         <div class="max-w-5xl mx-auto">
             <div class="mb-12">
-                <div class="inline-block bg-stone-900/30 p-6 rounded-2xl border border-stone-800 min-w-[200px]">
+                <div class="bg-stone-900/30 p-6 rounded-2xl border border-stone-800 inline-block min-w-[200px]">
                     <p class="text-[10px] font-bold text-stone-600 uppercase mb-1">Active Listings</p>
                     <h3 id="stat-count" class="text-3xl font-black text-white italic">0</h3>
                 </div>
@@ -49,18 +48,6 @@
         const _key = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdqZnRtaHZ0ZXlsaHRsd2NvdXdnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg5MTg5MDUsImV4cCI6MjA4NDQ5NDkwNX0.SBELcOhXZrm8fWHTaC1Ujjo-ZL7qUelFjxs7hmWGY5k';
         const client = createClient(_url, _key);
 
-        function getCategoryImage(category) {
-            const images = {
-                'Carpentry': 'https://img.icons8.com/color/96/hammer.png',
-                'Mining': 'https://img.icons8.com/color/96/pickax.png',
-                'Digging': 'https://img.icons8.com/color/96/shovel.png',
-                'Smithing': 'https://img.icons8.com/color/96/anvil.png',
-                'Bulk': 'https://img.icons8.com/color/96/package.png',
-                'Misc': 'https://img.icons8.com/color/96/box.png'
-            };
-            return images[category] || images['Misc'];
-        }
-
         async function loadMerchantData() {
             const urlParams = new URLSearchParams(window.location.search);
             const sellerId = urlParams.get('id');
@@ -71,68 +58,44 @@
             if (profile) {
                 document.getElementById('merchant-name').innerText = profile.character_name || 'Merchant';
                 document.getElementById('merchant-server').innerText = profile.server_name || 'Cadence';
-                document.getElementById('merchant-bio').innerText = profile.bio || 'No description provided.';
+                document.getElementById('merchant-bio').innerText = profile.bio || '';
             }
 
-            // Fetch Products
+            // Fetch Products matching the seller_id
             const { data: products } = await client.from('products').select('*').eq('seller_id', sellerId);
             if (products) {
-                document.getElementById('stat-count').innerText = products.length;
                 renderMerchantGrid(products, profile?.character_name, profile?.server_name);
+                document.getElementById('stat-count').innerText = products.length;
             }
         }
 
         function renderMerchantGrid(products, sellerName, serverName) {
             const grid = document.getElementById('merchant-grid');
-            if (products.length === 0) {
-                grid.innerHTML = `<div class="col-span-full py-10 text-stone-600 italic text-center">No active listings.</div>`;
-                return;
-            }
-
             grid.innerHTML = products.map(item => {
-                let priceParts = [];
-                if (item.price_g > 0) priceParts.push(`${item.price_g}g`);
-                if (item.price_s > 0) priceParts.push(`${item.price_s}s`);
-                if (item.price_c > 0) priceParts.push(`${item.price_c}c`);
-                const finalPrice = priceParts.length > 0 ? priceParts.join(' ') : "Offer";
-
+                let price = `${item.price_g}g ${item.price_s}s ${item.price_c}c`;
                 return `
                     <div class="wurm-card overflow-hidden rounded-2xl p-6 bg-stone-900/40 border border-stone-800/50">
-                        <div class="h-24 flex items-center justify-center mb-6 opacity-40">
-                            <img src="${getCategoryImage(item.category)}" class="w-16 h-16 grayscale">
-                        </div>
                         <div class="flex justify-between items-start mb-6">
                             <div>
                                 <span class="text-[9px] font-black uppercase text-yellow-600 tracking-widest">${item.category}</span>
                                 <h3 class="text-xl font-bold text-white">${item.item_name}</h3>
                             </div>
-                            <button onclick="copyWurmCommand('${sellerName}', '${item.item_name}', '${finalPrice}', '${serverName}')" 
+                            <button onclick="copyWurmCommand('${sellerName}', '${item.item_name}', '${price}', '${serverName}')" 
                                     class="p-3 bg-stone-800 hover:bg-yellow-600 text-stone-500 hover:text-black rounded-xl transition-all">
                                 <i data-lucide="message-square" class="w-4 h-4"></i>
                             </button>
                         </div>
-                        <div class="flex gap-4 mb-6">
-                            <div class="bg-black/30 p-2 rounded-lg border border-stone-800/50 flex-1">
-                                <p class="text-[8px] uppercase text-stone-600 font-bold mb-1">Stock</p>
-                                <p class="text-xs font-mono text-stone-300">${item.quantity || '∞'}</p>
-                            </div>
-                            <div class="bg-black/30 p-2 rounded-lg border border-stone-800/50 flex-1">
-                                <p class="text-[8px] uppercase text-stone-600 font-bold mb-1">Quality</p>
-                                <p class="text-xs font-mono text-yellow-500">${item.base_ql ? item.base_ql + ' QL' : 'Bulk'}</p>
-                            </div>
-                        </div>
-                        <div class="flex justify-between items-center border-t border-white/5 pt-4">
-                            <div class="text-2xl font-black text-white italic">${finalPrice}</div>
-                            <span class="text-[9px] text-stone-600 uppercase font-bold">${item.rarity || 'Common'}</span>
+                        <div class="flex gap-4 mb-6 pt-4 border-t border-white/5">
+                            <div class="text-2xl font-black text-white italic">${price}</div>
                         </div>
                     </div>`;
             }).join('');
-            lucide.createIcons();
+            if (window.lucide) lucide.createIcons();
         }
 
         window.copyWurmCommand = (seller, item, price, server) => {
             navigator.clipboard.writeText(\`/tell \${seller} wtb \${item} for \${price} on \${server}\`);
-            alert("Command copied! Paste into Wurm chat.");
+            alert("Command copied!");
         };
 
         document.addEventListener('DOMContentLoaded', loadMerchantData);

@@ -7,52 +7,23 @@ async function initDashboard() {
     const { data: { user } } = await client.auth.getUser();
     if (!user) { window.location.href = 'login.html'; return; }
     
+    // AUTO-FIX: Ensure all your existing items have a seller_id
+    await client.from('products').update({ seller_id: user.id }).eq('user_id', user.id).is('seller_id', null);
+    
     loadProfile(user.id);
     loadMyItems(user.id);
-    
-    // Heartbeat: Updates 'last_seen' every 30 seconds for the Green Dot
-    updateOnlineStatus(user.id);
-    setInterval(() => updateOnlineStatus(user.id), 30000);
 }
 
-async function updateOnlineStatus(userId) {
-    await client.from('profiles').update({ last_seen: new Date().toISOString() }).eq('id', userId);
-}
+// ... (keep loadProfile, saveProfile, and startEdit exactly as you have them)
 
-// PROFILE MANAGEMENT
-async function loadProfile(userId) {
-    const { data } = await client.from('profiles').select('*').eq('id', userId).single();
-    if (data) {
-        document.getElementById('char-name').value = data.character_name || '';
-        document.getElementById('char-server').value = data.server_name || 'Cadence';
-        document.getElementById('char-bio').value = data.bio || '';
-    }
-}
-
-window.saveProfile = async () => {
-    const { data: { user } } = await client.auth.getUser();
-    const { error } = await client.from('profiles').upsert({
-        id: user.id,
-        character_name: document.getElementById('char-name').value,
-        server_name: document.getElementById('char-server').value,
-        bio: document.getElementById('char-bio').value,
-        last_seen: new Date().toISOString()
-    });
-    if (error) alert(error.message);
-    else alert("Profile updated!");
-};
-
-window.signOut = async () => { await client.auth.signOut(); window.location.replace('index.html'); };
-
-// CRUD OPERATIONS
 document.getElementById('add-item-form').addEventListener('submit', async (e) => {
     e.preventDefault();
     const { data: { user } } = await client.auth.getUser();
     const editId = document.getElementById('edit-item-id').value;
     
     const itemData = {
-        seller_id: user.id, // Linked to profile
         user_id: user.id,   // Legacy support
+        seller_id: user.id, // REQUIRED for Merchant Page
         item_name: document.getElementById('item-name').value, 
         category: document.getElementById('item-cat').value,
         base_ql: parseInt(document.getElementById('item-ql').value) || null,
@@ -69,13 +40,14 @@ document.getElementById('add-item-form').addEventListener('submit', async (e) =>
 
     if (result.error) alert(result.error.message);
     else {
-        alert(editId ? "Listing updated!" : "Item is now live!");
+        alert("Inventory Updated!");
         resetForm();
         loadMyItems(user.id);
     }
 });
 
 async function loadMyItems(userId) {
+    // We check seller_id to be consistent with the rest of the app
     const { data } = await client.from('products').select('*').eq('seller_id', userId).order('created_at', { ascending: false });
     const container = document.getElementById('my-inventory');
     
