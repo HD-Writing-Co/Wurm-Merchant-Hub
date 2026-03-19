@@ -10,19 +10,16 @@ async function initDashboard() {
     loadProfile(user.id);
     loadMyItems(user.id);
     
-    // Start Heartbeat for Online Status
+    // Heartbeat: Updates 'last_seen' every 30 seconds for the Green Dot
     updateOnlineStatus(user.id);
     setInterval(() => updateOnlineStatus(user.id), 30000);
 }
 
 async function updateOnlineStatus(userId) {
-    await client
-        .from('profiles')
-        .update({ last_seen: new Date().toISOString() })
-        .eq('id', userId);
+    await client.from('profiles').update({ last_seen: new Date().toISOString() }).eq('id', userId);
 }
 
-// PROFILE
+// PROFILE MANAGEMENT
 async function loadProfile(userId) {
     const { data } = await client.from('profiles').select('*').eq('id', userId).single();
     if (data) {
@@ -47,44 +44,15 @@ window.saveProfile = async () => {
 
 window.signOut = async () => { await client.auth.signOut(); window.location.replace('index.html'); };
 
-// LISTING LOGIC
-window.startEdit = async (itemId) => {
-    const { data, error } = await client.from('products').select('*').eq('id', itemId).single();
-    if (error) return;
-
-    document.getElementById('edit-item-id').value = data.id;
-    document.getElementById('item-name').value = data.item_name;
-    document.getElementById('item-cat').value = data.category;
-    document.getElementById('item-ql').value = data.base_ql || '';
-    document.getElementById('item-qty').value = data.quantity || '';
-    document.getElementById('item-rarity').value = data.rarity;
-    document.getElementById('price-g').value = data.price_g;
-    document.getElementById('price-s').value = data.price_s;
-    document.getElementById('price-c').value = data.price_c;
-    document.getElementById('price-i').value = data.price_i;
-
-    document.getElementById('form-title').innerText = "Edit Listing";
-    document.getElementById('submit-btn').innerText = "Update Listing";
-    document.getElementById('cancel-edit').classList.remove('hidden');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-};
-
-window.resetForm = () => {
-    document.getElementById('add-item-form').reset();
-    document.getElementById('edit-item-id').value = "";
-    document.getElementById('form-title').innerText = "Add New Inventory";
-    document.getElementById('submit-btn').innerText = "List Item on Hub";
-    document.getElementById('cancel-edit').classList.add('hidden');
-};
-
+// CRUD OPERATIONS
 document.getElementById('add-item-form').addEventListener('submit', async (e) => {
     e.preventDefault();
     const { data: { user } } = await client.auth.getUser();
     const editId = document.getElementById('edit-item-id').value;
     
     const itemData = {
-        seller_id: user.id, // Primary key for joins
-        user_id: user.id,   // Backup key
+        seller_id: user.id, // Linked to profile
+        user_id: user.id,   // Legacy support
         item_name: document.getElementById('item-name').value, 
         category: document.getElementById('item-cat').value,
         base_ql: parseInt(document.getElementById('item-ql').value) || null,
@@ -92,8 +60,7 @@ document.getElementById('add-item-form').addEventListener('submit', async (e) =>
         rarity: document.getElementById('item-rarity').value,
         price_g: parseInt(document.getElementById('price-g').value) || 0,
         price_s: parseInt(document.getElementById('price-s').value) || 0,
-        price_c: parseInt(document.getElementById('price-c').value) || 0,
-        price_i: parseInt(document.getElementById('price-i').value) || 0
+        price_c: parseInt(document.getElementById('price-c').value) || 0
     };
 
     let result = editId 
@@ -102,7 +69,7 @@ document.getElementById('add-item-form').addEventListener('submit', async (e) =>
 
     if (result.error) alert(result.error.message);
     else {
-        alert(editId ? "Listing updated!" : "Success! Item is now live.");
+        alert(editId ? "Listing updated!" : "Item is now live!");
         resetForm();
         loadMyItems(user.id);
     }
@@ -118,11 +85,10 @@ async function loadMyItems(userId) {
                 <div>
                     <span class="text-white font-bold">${item.item_name}</span>
                     <span class="text-yellow-600 ml-2">${item.base_ql || 'Bulk'} QL</span>
-                    <p class="text-[10px] text-stone-500 uppercase">${item.category} • ${item.price_g}g ${item.price_s}s</p>
                 </div>
                 <div class="flex gap-4">
-                    <button onclick="startEdit(${item.id})" class="text-stone-400 hover:text-white text-xs font-bold uppercase">Edit</button>
-                    <button onclick="deleteItem(${item.id})" class="text-red-900 hover:text-red-500 text-xs font-bold uppercase">Remove</button>
+                    <button onclick="startEdit(${item.id})" class="text-stone-400 hover:text-white uppercase text-xs">Edit</button>
+                    <button onclick="deleteItem(${item.id})" class="text-red-900 hover:text-red-500 uppercase text-xs">Remove</button>
                 </div>
             </div>`).join('');
     } else {
