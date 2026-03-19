@@ -15,6 +15,7 @@
         .input-field:focus { border-color: #d4af37; }
         .gold-btn { background: #d4af37; color: black; font-weight: 800; padding: 0.75rem 1.5rem; border-radius: 0.75rem; transition: all 0.3s; cursor: pointer; }
         .gold-btn:hover { background: #f4cf67; transform: translateY(-2px); }
+        .edit-mode { border-color: #3b82f6 !important; box-shadow: 0 0 15px rgba(59, 130, 246, 0.2); }
         .message-pill { background: #1a1a1a; border-left: 4px solid #d4af37; transition: all 0.2s; }
         .message-pill:hover { background: #222; }
     </style>
@@ -78,17 +79,29 @@
                         <h3 id="form-title" class="text-lg font-black text-white mb-6 uppercase italic">Add New Listing</h3>
                         <form id="product-form" class="space-y-4">
                             <input type="hidden" id="edit-id">
-                            <input type="text" id="item_name" class="input-field" placeholder="Item Name" required>
-                            <div class="grid grid-cols-2 gap-4">
-                                <input type="number" id="base_ql" class="input-field" value="50" step="0.1">
-                                <input type="text" id="quantity" class="input-field" value="1">
+                            <div>
+                                <label class="text-[10px] font-black text-stone-600 uppercase mb-2 block">Item Name</label>
+                                <input type="text" id="item_name" class="input-field" placeholder="Small Chest" required>
                             </div>
-                            <select id="category" class="input-field">
-                                <option value="Carpentry">Carpentry</option>
-                                <option value="Smithing">Smithing</option>
-                                <option value="Tools">Tools</option>
-                                <option value="Misc">Misc</option>
-                            </select>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="text-[10px] font-black text-stone-600 uppercase mb-2 block">Quality (QL)</label>
+                                    <input type="number" id="base_ql" class="input-field" value="50" step="0.1">
+                                </div>
+                                <div>
+                                    <label class="text-[10px] font-black text-stone-600 uppercase mb-2 block">Quantity</label>
+                                    <input type="text" id="quantity" class="input-field" value="1">
+                                </div>
+                            </div>
+                            <div>
+                                <label class="text-[10px] font-black text-stone-600 uppercase mb-2 block">Category</label>
+                                <select id="category" class="input-field">
+                                    <option value="Carpentry">Carpentry</option>
+                                    <option value="Smithing">Smithing</option>
+                                    <option value="Tools">Tools</option>
+                                    <option value="Misc">Misc</option>
+                                </select>
+                            </div>
                             <div class="grid grid-cols-4 gap-1">
                                 <input type="number" id="price_g" class="input-field !p-2" value="0">
                                 <input type="number" id="price_s" class="input-field !p-2" value="0">
@@ -110,13 +123,17 @@
 
     <script>
         const { createClient } = supabase;
-        const client = createClient('https://gjftmhvteylhtlwcouwg.supabase.co', 'YOUR_SUPABASE_KEY');
+        const _url = 'https://gjftmhvteylhtlwcouwg.supabase.co';
+        const _key = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdqZnRtaHZ0ZXlsaHRsd2NvdXdnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg5MTg5MDUsImV4cCI6MjA4NDQ5NDkwNX0.SBELcOhXZrm8fWHTaC1Ujjo-ZL7qUelFjxs7hmWGY5k';
+        const client = createClient(_url, _key);
 
         async function init() {
             const { data: { user } } = await client.auth.getUser();
             if (!user) { window.location.href = 'login.html'; return; }
             
-            const { data: profile } = await client.from('profiles').select('*').eq('id', user.id).single();
+            // Fixed: Use .maybeSingle() to prevent crash if profile doesn't exist yet
+            const { data: profile } = await client.from('profiles').select('*').eq('id', user.id).maybeSingle();
+            
             if (profile) {
                 document.getElementById('prof_name').value = profile.character_name || "";
                 document.getElementById('prof_server').value = profile.server_name || "Cadence";
@@ -143,17 +160,17 @@
                 <div class="p-4 rounded-xl message-pill flex justify-between items-start group">
                     <div class="flex-1">
                         <div class="flex justify-between items-start mb-1">
-                            <span class="text-xs font-bold text-yellow-600 uppercase">${msg.sender_name}</span>
+                            <span class="text-xs font-bold text-yellow-600 uppercase tracking-tighter">${msg.sender_name}</span>
                             <span class="text-[9px] text-stone-600 font-mono">${new Date(msg.created_at).toLocaleDateString()}</span>
                         </div>
-                        <p class="text-stone-300 text-sm">${msg.message}</p>
+                        <p class="text-stone-300 text-sm leading-relaxed">${msg.message}</p>
                     </div>
                     <button onclick="deleteMessage('${msg.id}')" class="ml-4 p-2 text-stone-700 hover:text-red-500 transition-colors">
                         <i data-lucide="trash-2" class="w-4 h-4"></i>
                     </button>
                 </div>
             `).join('');
-            lucide.createIcons();
+            if (window.lucide) lucide.createIcons();
         }
 
         async function deleteMessage(id) {
@@ -166,25 +183,55 @@
 
         async function updateProfile() {
             const { data: { user } } = await client.auth.getUser();
-            await client.from('profiles').upsert({
+            const updates = {
                 id: user.id,
                 character_name: document.getElementById('prof_name').value,
                 server_name: document.getElementById('prof_server').value,
                 bio: document.getElementById('prof_bio').value,
                 updated_at: new Date()
-            });
-            alert("Profile updated!");
+            };
+
+            const { error } = await client.from('profiles').upsert(updates);
+            if (error) alert("Error: " + error.message);
+            else alert("Profile updated!");
         }
 
         async function loadMyProducts(userId) {
-            const { data } = await client.from('products').select('*').eq('seller_id', userId);
-            document.getElementById('my-listings').innerHTML = data.map(item => `
-                <div class="p-5 bg-[#111] border border-stone-900 rounded-2xl flex justify-between items-center">
-                    <div class="text-white font-bold">${item.item_name} (QL ${item.base_ql})</div>
-                    <button onclick="deleteProduct('${item.id}')" class="text-stone-600 hover:text-red-500"><i data-lucide="trash-2"></i></button>
+            const { data } = await client.from('products').select('*').eq('seller_id', userId).order('created_at', {ascending: false});
+            const container = document.getElementById('my-listings');
+            
+            if (!data || data.length === 0) {
+                container.innerHTML = `<div class="p-12 text-center text-stone-700 italic border border-dashed border-stone-900 rounded-3xl">No listings yet.</div>`;
+                return;
+            }
+
+            container.innerHTML = data.map(item => `
+                <div class="p-5 bg-[#111] border border-stone-900 rounded-2xl flex justify-between items-center group hover:border-stone-700 transition-all">
+                    <div class="flex gap-4 items-center">
+                        <div class="w-10 h-10 bg-stone-900 rounded-lg flex items-center justify-center text-stone-600"><i data-lucide="package" class="w-5 h-5"></i></div>
+                        <div>
+                            <p class="text-white font-bold leading-none mb-1">${item.item_name} <span class="text-yellow-600 text-[10px] ml-2 font-mono">QL ${item.base_ql}</span></p>
+                            <div class="flex gap-2 text-[9px] font-black uppercase tracking-widest text-stone-600">
+                                <span>${item.category}</span>
+                                <span>•</span>
+                                <span>Qty: ${item.quantity}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-4">
+                        <button onclick="deleteProduct('${item.id}')" class="p-2 text-stone-600 hover:text-red-500 transition-all"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                    </div>
                 </div>`).join('');
             lucide.createIcons();
         }
+
+        window.deleteProduct = async (id) => {
+            if (confirm('Permanently remove this listing?')) {
+                await client.from('products').delete().eq('id', id);
+                const { data: { user } } = await client.auth.getUser();
+                loadMyProducts(user.id);
+            }
+        };
 
         window.handleLogout = async () => { await client.auth.signOut(); window.location.href = 'index.html'; };
         document.addEventListener('DOMContentLoaded', init);
