@@ -17,6 +17,7 @@
         .gold-btn:hover { background: #f4cf67; transform: translateY(-2px); }
         .message-pill { background: #1a1a1a; border-left: 4px solid #d4af37; transition: all 0.2s; }
         .message-pill:hover { background: #222; }
+        /* Fix for scrollbar in messages */
         #message-container::-webkit-scrollbar { width: 4px; }
         #message-container::-webkit-scrollbar-thumb { background: #222; border-radius: 10px; }
     </style>
@@ -100,28 +101,10 @@
                             <div>
                                 <label class="text-[10px] font-black text-stone-600 uppercase mb-2 block">Category</label>
                                 <select id="category" class="input-field">
-                                    <optgroup label="Crafting">
-                                        <option value="Carpentry">Carpentry</option>
-                                        <option value="Smithing">Smithing</option>
-                                        <option value="Masonry">Masonry</option>
-                                        <option value="Tailoring">Tailoring</option>
-                                        <option value="Leatherworking">Leatherworking</option>
-                                        <option value="Jewelry">Jewelry</option>
-                                        <option value="Pottery">Pottery</option>
-                                    </optgroup>
-                                    <optgroup label="Equipment">
-                                        <option value="Armor">Armor</option>
-                                        <option value="Weapons">Weapons</option>
-                                        <option value="Tools">Tools</option>
-                                        <option value="Ships">Ships / Marine</option>
-                                    </optgroup>
-                                    <optgroup label="Nature">
-                                        <option value="Animal Husbandry">Animal Husbandry</option>
-                                        <option value="Farming">Farming / Seeds</option>
-                                        <option value="Cooking">Cooking / Food</option>
-                                        <option value="Alchemy">Alchemy / Potions</option>
-                                    </optgroup>
-                                    <option value="Misc">Miscellaneous / Rifts</option>
+                                    <option value="Carpentry">Carpentry</option>
+                                    <option value="Smithing">Smithing</option>
+                                    <option value="Tools">Tools</option>
+                                    <option value="Misc">Misc</option>
                                 </select>
                             </div>
 
@@ -140,7 +123,9 @@
 
                 <div class="lg:col-span-2">
                     <h3 class="text-lg font-black text-white mb-6 uppercase italic">Active Inventory</h3>
-                    <div id="my-listings" class="space-y-3"></div>
+                    <div id="my-listings" class="space-y-3">
+                        <div class="p-12 text-center text-stone-700 italic border border-dashed border-stone-900 rounded-3xl">Loading items...</div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -155,22 +140,25 @@
         async function init() {
             const { data: { user } } = await client.auth.getUser();
             if (!user) { window.location.href = 'login.html'; return; }
+            
             const { data: profile } = await client.from('profiles').select('*').eq('id', user.id).maybeSingle();
             if (profile) {
                 document.getElementById('prof_name').value = profile.character_name || "";
                 document.getElementById('prof_server').value = profile.server_name || "Cadence";
                 document.getElementById('prof_bio').value = profile.bio || "";
             }
+            
             loadMyProducts(user.id);
             loadMessages(user.id);
+            lucide.createIcons();
         }
 
         async function loadMessages(userId) {
-            const { data } = await client.from('inquiries').select('*').eq('seller_id', userId).order('created_at', { ascending: false });
+            const { data, error } = await client.from('inquiries').select('*').eq('seller_id', userId).order('created_at', { ascending: false });
             const container = document.getElementById('message-container');
             const countBadge = document.getElementById('msg-count');
 
-            if (!data || data.length === 0) {
+            if (error || !data || data.length === 0) {
                 container.innerHTML = `<p class="text-stone-700 italic text-sm">No new messages.</p>`;
                 countBadge.innerText = "0 New";
                 return;
@@ -194,8 +182,7 @@
             lucide.createIcons();
         }
 
-        // Explicitly exposing functions to the window for onclick events
-        window.deleteMessage = async (id) => {
+        async function deleteMessage(id) {
             if (confirm('Permanently delete this inquiry?')) {
                 const { error } = await client.from('inquiries').delete().eq('id', id);
                 if (!error) {
@@ -203,50 +190,57 @@
                     loadMessages(user.id);
                 }
             }
-        };
+        }
 
-        window.updateProfile = async () => {
+        async function updateProfile() {
             const { data: { user } } = await client.auth.getUser();
-            await client.from('profiles').upsert({
+            const updates = {
                 id: user.id,
                 character_name: document.getElementById('prof_name').value,
                 server_name: document.getElementById('prof_server').value,
                 bio: document.getElementById('prof_bio').value,
                 updated_at: new Date()
-            });
-            alert("Settings updated!");
-        };
+            };
+            await client.from('profiles').upsert(updates);
+            alert("Merchant settings updated!");
+        }
 
         async function loadMyProducts(userId) {
             const { data } = await client.from('products').select('*').eq('seller_id', userId).order('created_at', {ascending: false});
             const container = document.getElementById('my-listings');
+            
             if (!data || data.length === 0) {
                 container.innerHTML = `<div class="p-12 text-center text-stone-700 italic border border-dashed border-stone-900 rounded-3xl">No listings yet.</div>`;
                 return;
             }
+
             container.innerHTML = data.map(item => `
                 <div class="p-5 bg-[#111] border border-stone-900 rounded-2xl flex justify-between items-center group hover:border-stone-700 transition-all">
                     <div class="flex gap-4 items-center">
                         <div class="w-10 h-10 bg-stone-900 rounded-lg flex items-center justify-center text-stone-600"><i data-lucide="package" class="w-5 h-5"></i></div>
                         <div>
-                            <p class="text-white font-bold mb-1">${item.item_name} <span class="text-yellow-600 text-[10px] ml-2 font-mono">QL ${item.base_ql}</span></p>
-                            <div class="flex gap-2 text-[9px] font-black uppercase text-stone-600">
-                                <span>${item.category}</span> • <span>Qty: ${item.quantity}</span>
+                            <p class="text-white font-bold leading-none mb-1">${item.item_name} <span class="text-yellow-600 text-[10px] ml-2 font-mono">QL ${item.base_ql}</span></p>
+                            <div class="flex gap-2 text-[9px] font-black uppercase tracking-widest text-stone-600">
+                                <span>${item.category}</span>
+                                <span>•</span>
+                                <span>Qty: ${item.quantity}</span>
                             </div>
                         </div>
                     </div>
-                    <button onclick="deleteProduct('${item.id}')" class="p-2 text-stone-600 hover:text-red-500 transition-all"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                    <div class="flex items-center gap-4">
+                        <button onclick="deleteProduct('${item.id}')" class="p-2 text-stone-600 hover:text-red-500 transition-all"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                    </div>
                 </div>`).join('');
             lucide.createIcons();
         }
 
-        window.deleteProduct = async (id) => {
+        async function deleteProduct(id) {
             if (confirm('Remove this listing?')) {
                 await client.from('products').delete().eq('id', id);
                 const { data: { user } } = await client.auth.getUser();
                 loadMyProducts(user.id);
             }
-        };
+        }
 
         window.handleLogout = async () => { await client.auth.signOut(); window.location.href = 'index.html'; };
         document.addEventListener('DOMContentLoaded', init);
