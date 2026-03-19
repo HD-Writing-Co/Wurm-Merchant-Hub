@@ -33,7 +33,7 @@
 
     <aside class="w-72 bg-[#161616] border-r border-stone-800 flex flex-col sticky top-0 h-screen overflow-y-auto">
         <div class="p-8 flex flex-col h-full">
-            <h1 class="text-2xl font-black gold-text tracking-tighter mb-8 italic">WURM HUB</h1>
+            <h1 class="text-2xl font-black gold-text tracking-tighter mb-8 italic uppercase">WURM HUB</h1>
             
             <div id="nav-auth" class="mb-8">
                 <a href="login.html" class="block p-4 rounded-xl bg-stone-900 border border-stone-800 hover:border-yellow-700/50 transition-all">
@@ -71,7 +71,7 @@
                 </div>
                 <div>
                     <p class="text-[10px] font-black uppercase text-stone-600 tracking-widest mb-1">Servers</p>
-                     <h2 id="stat-servers" class="text-3xl font-black text-white italic">0</h2>
+                     <h2 id="stat-servers" class="text-3xl font-black text-white italic">1</h2>
                 </div>
             </div>
 
@@ -104,7 +104,49 @@
 
     <script src="app.js"></script>
     <script>
+        const { createClient } = supabase;
+        const _url = 'https://gjftmhvteylhtlwcouwg.supabase.co';
+        const _key = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdqZnRtaHZ0ZXlsaHRsd2NvdXdnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg5MTg5MDUsImV4cCI6MjA4NDQ5NDkwNX0.SBELcOhXZrm8fWHTaC1Ujjo-ZL7qUelFjxs7hmWGY5k';
+        const client = createClient(_url, _key);
+
+        async function updateLiveStats() {
+            // 1. Fetch all products to calculate totals
+            const { data: products, error } = await client.from('products').select('seller_id');
+            
+            if (!error && products) {
+                // Update Total Listings
+                document.getElementById('stat-items').innerText = products.length;
+
+                // Update Active Sellers (Unique IDs)
+                const uniqueSellers = new Set(products.map(p => p.seller_id)).size;
+                document.getElementById('stat-sellers').innerText = uniqueSellers;
+                
+                // Static server count or dynamic based on profiles? Setting to 1 for now as requested.
+                document.getElementById('stat-servers').innerText = "1";
+            }
+
+            // 2. Check if user is logged in to update the sidebar button
+            const { data: { user } } = await client.auth.getUser();
+            if (user) {
+                document.getElementById('nav-auth').innerHTML = `
+                    <a href="dashboard.html" class="block p-4 rounded-xl bg-yellow-900/10 border border-yellow-700/30 hover:border-yellow-500 transition-all">
+                        <p class="text-[10px] text-yellow-600 font-bold uppercase mb-2">Merchant Portal</p>
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-full bg-yellow-600 border border-yellow-400 flex items-center justify-center">
+                                <i data-lucide="layout-dashboard" class="w-5 h-5 text-black"></i>
+                            </div>
+                            <div>
+                                <div class="text-sm font-bold text-white">Dashboard</div>
+                                <div class="text-[10px] text-green-500 font-black uppercase">Online</div>
+                            </div>
+                        </div>
+                    </a>`;
+                if (window.lucide) lucide.createIcons();
+            }
+        }
+
         document.addEventListener('DOMContentLoaded', () => {
+            updateLiveStats();
             if (window.lucide) lucide.createIcons();
         });
     </script>
