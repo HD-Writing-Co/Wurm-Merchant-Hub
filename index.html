@@ -13,91 +13,47 @@
         .wurm-card {
             background: linear-gradient(145deg, #2a2a2a, #1a1a1a);
             border: 1px solid rgba(212, 175, 55, 0.1);
-            box-shadow: 0 10px 20px rgba(0,0,0,0.5);
             transition: all 0.3s ease;
         }
-        .wurm-card:hover { 
-            transform: translateY(-5px); 
-            border-color: #d4af37; 
-            box-shadow: 0 0 15px rgba(212, 175, 55, 0.2); 
-        }
+        .wurm-card:hover { transform: translateY(-5px); border-color: #d4af37; box-shadow: 0 0 15px rgba(212, 175, 55, 0.2); }
         .gold-text { color: #d4af37; }
-        .ad-banner { 
-            background: #161616; border: 1px dashed #3d3225; display: flex; 
-            align-items: center; justify-content: center; color: #3d3225; 
-            font-size: 10px; text-transform: uppercase; letter-spacing: 2px; text-align: center;
-        }
+        .ad-banner { background: #161616; border: 1px dashed #3d3225; display: flex; align-items: center; justify-content: center; color: #3d3225; font-size: 10px; text-transform: uppercase; letter-spacing: 2px; }
     </style>
 </head>
 <body class="flex min-h-screen">
-
     <aside class="w-72 bg-[#161616] border-r border-stone-800 flex flex-col sticky top-0 h-screen overflow-y-auto">
         <div class="p-8 flex flex-col h-full">
             <h1 class="text-2xl font-black gold-text tracking-tighter mb-8 italic uppercase">WURM HUB</h1>
-            
             <div id="nav-auth" class="mb-8">
                 <a href="login.html" class="block p-4 rounded-xl bg-stone-900 border border-stone-800 hover:border-yellow-700/50 transition-all">
                     <p class="text-[10px] text-stone-600 font-bold uppercase mb-2">Merchant Portal</p>
                     <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 rounded-full bg-yellow-900/20 border border-yellow-700/50 flex items-center justify-center">
-                            <i data-lucide="log-in" class="w-5 h-5 text-yellow-500"></i>
-                        </div>
-                        <div>
-                            <div class="text-sm font-bold text-stone-200">Sign In</div>
-                            <div class="text-[10px] text-stone-500 italic">Manage Inventory</div>
-                        </div>
+                        <div class="w-10 h-10 rounded-full bg-yellow-900/20 border border-yellow-700/50 flex items-center justify-center"><i data-lucide="log-in" class="w-5 h-5 text-yellow-500"></i></div>
+                        <div><div class="text-sm font-bold text-stone-200">Sign In</div><div class="text-[10px] text-stone-500 italic">Manage Inventory</div></div>
                     </div>
-				</a>
-			</div>
-
-            <div class="mt-auto">
-                <div class="ad-banner w-full h-64 rounded-lg px-4">Sidebar Ad Slot</div>
+                </a>
             </div>
+            <div class="mt-auto"><div class="ad-banner w-full h-64 rounded-lg px-4">Sidebar Ad Slot</div></div>
         </div>
     </aside>
 
     <main class="flex-1 bg-[#0f0f0f]">
         <div class="max-w-6xl mx-auto p-8">
-            <div class="ad-banner w-full h-24 rounded-xl mb-12">Top Leaderboard Ad Placement (728x90)</div>
-
             <div class="flex gap-12 mb-10 pb-8 border-b border-stone-800/50">
-                <div>
-                    <p class="text-[10px] font-black uppercase text-stone-600 tracking-widest mb-1">Total Listings</p>
-                    <h2 id="stat-items" class="text-3xl font-black text-white italic">0</h2>
-                </div>
-                <div>
-                    <p class="text-[10px] font-black uppercase text-stone-600 tracking-widest mb-1">Active Sellers</p>
-                    <h2 id="stat-sellers" class="text-3xl font-black text-white italic">0</h2>
-                </div>
-                <div>
-                    <p class="text-[10px] font-black uppercase text-stone-600 tracking-widest mb-1">Servers</p>
-                     <h2 id="stat-servers" class="text-3xl font-black text-white italic">1</h2>
-                </div>
+                <div><p class="text-[10px] font-black uppercase text-stone-600 tracking-widest mb-1">Total Listings</p><h2 id="stat-items" class="text-3xl font-black text-white italic">0</h2></div>
+                <div><p class="text-[10px] font-black uppercase text-stone-600 tracking-widest mb-1">Active Sellers</p><h2 id="stat-sellers" class="text-3xl font-black text-white italic">0</h2></div>
+                <div><p class="text-[10px] font-black uppercase text-stone-600 tracking-widest mb-1">Servers</p><h2 id="stat-servers" class="text-3xl font-black text-white italic">1</h2></div>
             </div>
 
-            <header class="flex flex-col md:flex-row justify-between items-center gap-6 mb-12">
-                <div>
-                    <h2 class="text-3xl font-bold text-white tracking-tight">Market Catalog</h2>
-                    <p class="text-stone-500 text-sm">Browsing items from verified merchants.</p>
-                </div>
-                
-                <div class="flex gap-3 w-full max-w-xl">
-                    <div class="relative flex-1">
-                        <i data-lucide="search" class="absolute left-4 top-3.5 text-stone-500 w-4 h-4"></i>
-                        <input type="text" id="search-bar" placeholder="Search items..." class="w-full bg-stone-900 border border-stone-800 p-3 pl-12 rounded-xl text-sm outline-none focus:border-yellow-700/50">
-                    </div>
-                    <select id="filter-server" class="bg-stone-900 border border-stone-800 text-stone-400 text-xs font-bold uppercase px-4 rounded-xl outline-none cursor-pointer focus:border-yellow-700/50">
-                        <option value="all">All Servers</option>
-                        <option value="Cadence">Cadence</option>
-                        <option value="Harmony">Harmony</option>
-                        <option value="Melody">Melody</option>
-                        <option value="Pristine">Pristine</option>
-                    </select>
+            <header class="flex justify-between items-center mb-12">
+                <div><h2 class="text-3xl font-bold text-white tracking-tight">Market Catalog</h2><p class="text-stone-500 text-sm">Browsing items from verified merchants.</p></div>
+                <div class="flex gap-3 w-full max-w-md">
+                    <input type="text" id="search-bar" placeholder="Search items..." class="w-full bg-stone-900 border border-stone-800 p-3 rounded-xl text-sm outline-none focus:border-yellow-700/50">
                 </div>
             </header>
 
             <div id="inventory-grid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                <div class="col-span-full py-20 text-center text-stone-600 italic">Connecting to the Hub...</div>
+                <div class="col-span-full py-20 text-center text-stone-600 italic uppercase text-xs tracking-widest">Scanning Network...</div>
             </div>
         </div>
     </main>
@@ -108,64 +64,62 @@
         const _key = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdqZnRtaHZ0ZXlsaHRsd2NvdXdnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg5MTg5MDUsImV4cCI6MjA4NDQ5NDkwNX0.SBELcOhXZrm8fWHTaC1Ujjo-ZL7qUelFjxs7hmWGY5k';
         const client = createClient(_url, _key);
 
-        async function initHub() {
-            // 1. UPDATE AUTH BUTTON IMMEDIATELY
+        const iconMap = {
+            'Carpentry': 'hammer', 'Smithing': 'anvil', 'Mining': 'pickaxe', 'Masonry': 'bricks',
+            'Tailoring': 'scissors', 'Farming': 'wheat', 'Cooking': 'utensils', 'Jewelry': 'gem',
+            'Alchemy': 'flask-conical', 'Shipbuilding': 'ship', 'Animal Husbandry': 'horse', 'Misc': 'box'
+        };
+
+        async function init() {
             const { data: { session } } = await client.auth.getSession();
             if (session) {
                 document.getElementById('nav-auth').innerHTML = `
                     <a href="dashboard.html" class="block p-4 rounded-xl bg-yellow-900/10 border border-yellow-700/30 hover:border-yellow-500 transition-all">
                         <p class="text-[10px] text-yellow-600 font-bold uppercase mb-2">Merchant Portal</p>
                         <div class="flex items-center gap-3">
-                            <div class="w-10 h-10 rounded-full bg-yellow-600 border border-yellow-400 flex items-center justify-center">
-                                <i data-lucide="layout-dashboard" class="w-5 h-5 text-black"></i>
-                            </div>
-                            <div>
-                                <div class="text-sm font-bold text-white">Dashboard</div>
-                                <div class="text-[10px] text-green-500 font-black uppercase tracking-widest">Online</div>
-                            </div>
+                            <div class="w-10 h-10 rounded-full bg-yellow-600 flex items-center justify-center"><i data-lucide="layout-dashboard" class="w-5 h-5 text-black"></i></div>
+                            <div><div class="text-sm font-bold text-white">Dashboard</div><div class="text-[10px] text-green-500 font-black uppercase tracking-widest">Online</div></div>
                         </div>
                     </a>`;
             }
 
-            // 2. FETCH PRODUCTS AND PROFILES
             const { data: products } = await client.from('products').select('*');
             const { data: profiles } = await client.from('profiles').select('id, character_name, server_name');
             
             if (products) {
-                // Update Stats
                 document.getElementById('stat-items').innerText = products.length;
-                const uniqueSellers = new Set(products.map(p => p.seller_id)).size;
-                document.getElementById('stat-sellers').innerText = uniqueSellers;
-
-                // Render Grid
+                document.getElementById('stat-sellers').innerText = new Set(products.map(p => p.seller_id)).size;
                 const profileMap = Object.fromEntries(profiles.map(p => [p.id, p]));
-                const grid = document.getElementById('inventory-grid');
                 
-                grid.innerHTML = products.map(item => {
+                document.getElementById('inventory-grid').innerHTML = products.map(item => {
                     const prof = profileMap[item.seller_id] || { character_name: 'Merchant', server_name: 'Unknown' };
+                    let price = "";
+                    if (item.price_g > 0) price += `${item.price_g}g `;
+                    if (item.price_s > 0) price += `${item.price_s}s `;
+                    if (item.price_c > 0 || price === "") price += `${item.price_c}c`;
+                    const icon = iconMap[item.category] || 'box';
+
                     return `
-                        <div class="wurm-card rounded-2xl p-6 flex flex-col justify-between min-h-[220px]">
+                        <div class="wurm-card rounded-2xl p-6 flex flex-col justify-between min-h-[280px]">
                             <div>
-                                <div class="flex justify-between items-start mb-4">
-                                    <span class="text-[9px] font-black uppercase text-yellow-600 tracking-widest">${item.category}</span>
+                                <div class="flex justify-between items-start mb-6">
+                                    <div class="w-12 h-12 rounded-xl bg-stone-800/50 border border-stone-700/50 flex items-center justify-center"><i data-lucide="${icon}" class="w-6 h-6 text-stone-400"></i></div>
                                     <span class="text-[9px] font-black uppercase text-stone-600 tracking-widest">${prof.server_name}</span>
                                 </div>
-                                <h4 class="text-white font-bold text-lg leading-tight mb-2">${item.item_name}</h4>
-                                <p class="text-[10px] text-stone-500 font-bold uppercase">Seller: ${prof.character_name}</p>
+                                <span class="text-[9px] font-black uppercase text-yellow-600 tracking-[0.2em] mb-1 block">${item.category}</span>
+                                <h4 class="text-white font-bold text-xl mb-2">${item.item_name}</h4>
+                                <p class="text-[10px] text-stone-500 font-bold uppercase italic">Seller: ${prof.character_name}</p>
                             </div>
-                            <div class="mt-6 pt-4 border-t border-stone-800/50 flex justify-between items-center">
-                                <div class="text-2xl font-black text-white italic">${item.price_g}g ${item.price_s}s</div>
-                                <a href="merchant.html?id=${item.seller_id}" class="p-2 bg-stone-800 rounded-lg hover:bg-yellow-600 transition-colors">
-                                    <i data-lucide="external-link" class="w-4 h-4 text-stone-400 hover:text-black"></i>
-                                </a>
+                            <div class="mt-8 pt-4 border-t border-stone-800/50 flex justify-between items-end">
+                                <div><p class="text-[8px] font-black text-stone-600 uppercase mb-1">Price</p><div class="text-2xl font-black text-white italic">${price}</div></div>
+                                <a href="merchant.html?id=${item.seller_id}" class="p-3 bg-stone-800 hover:bg-yellow-600 text-stone-400 hover:text-black rounded-xl transition-all"><i data-lucide="external-link" class="w-5 h-5"></i></a>
                             </div>
                         </div>`;
                 }).join('');
             }
             if (window.lucide) lucide.createIcons();
         }
-
-        document.addEventListener('DOMContentLoaded', initHub);
+        document.addEventListener('DOMContentLoaded', init);
     </script>
 </body>
 </html>
