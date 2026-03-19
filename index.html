@@ -11,7 +11,30 @@
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
         body { background-color: #0f0f0f; color: #e5d5b5; font-family: 'Inter', sans-serif; }
         .gold-text { color: #d4af37; }
-        .stat-box { background-color: #161616; padding: 2rem; border-radius: 1rem; border: 1px solid #262626; }
+        .stat-box { background-color: #161616; padding: 2rem; border-radius: 1.5rem; border: 1px solid #262626; }
+        /* Matching the specific card style from your image */
+        .market-card { 
+            background: #1a1a1a; 
+            border-radius: 1.5rem; 
+            padding: 2rem; 
+            border: 1px solid #262626;
+            transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            min-height: 320px;
+        }
+        .market-card:hover { border-color: #d4af37; transform: translateY(-4px); }
+        .category-icon-container {
+            background: #262626;
+            width: 80px;
+            height: 80px;
+            border-radius: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 2rem auto;
+        }
     </style>
 </head>
 <body class="min-h-screen">
@@ -42,18 +65,18 @@
             <h2 id="active-sellers-count" class="text-5xl font-black text-white italic">0</h2>
         </div>
         <div class="stat-box">
-            <p class="text-[10px] font-black text-stone-600 uppercase tracking-widest mb-2">Servers</p>
-            <h2 class="text-5xl font-black text-white italic">1</h2>
+            <p class="text-[10px] font-black text-stone-600 uppercase tracking-widest mb-2">Connected Servers</p>
+            <h2 class="text-5xl font-black text-yellow-600 italic">1</h2>
         </div>
     </header>
 
     <main class="max-w-7xl mx-auto p-8">
         <div class="mb-12">
-            <h2 class="text-xs font-black text-stone-600 uppercase tracking-[0.3em] mb-2">Verified Merchants</h2>
-            <h3 class="text-4xl font-bold text-white tracking-tighter">Current Market Listings</h3>
+            <h2 class="text-xs font-black text-yellow-600 uppercase tracking-[0.3em] mb-2">Verified Merchants</h2>
+            <h3 class="text-4xl font-bold text-white tracking-tighter leading-tight">Current Market Listings</h3>
         </div>
 
-        <div id="market-grid" class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div id="market-grid" class="grid grid-cols-1 md:grid-cols-3 gap-8">
             </div>
     </main>
 
@@ -63,45 +86,58 @@
         const _key = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdqZnRtaHZ0ZXlsaHRsd2NvdXdnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg5MTg5MDUsImV4cCI6MjA4NDQ5NDkwNX0.SBELcOhXZrm8fWHTaC1Ujjo-ZL7qUelFjxs7hmWGY5k';
         const client = createClient(_url, _key);
 
+        const categoryIcons = {
+            'Carpentry': 'hammer',
+            'Mining': 'pickaxe',
+            'Smithing': 'anvil',
+            'Masonry': 'bricks',
+            'Farming': 'wheat',
+            'Misc': 'box'
+        };
+
         async function init() {
-            // 1. Live Auth Button
+            // 1. Auth Status
             const { data: { user } } = await client.auth.getUser();
             if (user) {
                 document.getElementById('auth-status-area').innerHTML = `
                     <a href="dashboard.html" class="flex items-center gap-4 group">
-                        <div class="p-3 border border-yellow-600/30 rounded-full group-hover:bg-yellow-600/10 transition-all">
+                        <div class="p-3 border border-yellow-600/30 rounded-full bg-yellow-900/10 group-hover:border-yellow-500 transition-all">
                             <i data-lucide="layout-dashboard" class="w-5 h-5 text-yellow-500"></i>
                         </div>
                         <div>
                             <p class="text-white font-bold uppercase tracking-tighter">Dashboard</p>
-                            <p class="text-yellow-600 text-[10px] font-black uppercase">Online</p>
+                            <p class="text-green-600 text-[10px] font-black uppercase">Online</p>
                         </div>
                     </a>`;
             }
 
-            // 2. Load Stats and Market
+            // 2. Fetch Data
             const { data: products } = await client.from('products').select('*');
             if (products) {
-                // Update stats
                 document.getElementById('total-listings-count').innerText = products.length;
                 const uniqueSellers = new Set(products.map(p => p.seller_id)).size;
                 document.getElementById('active-sellers-count').innerText = uniqueSellers;
 
-                // Simple list of items
                 const grid = document.getElementById('market-grid');
-                grid.innerHTML = products.map(item => `
-                    <div class="bg-[#161616] p-6 rounded-2xl border border-stone-800">
-                        <span class="text-[9px] font-black text-yellow-600 uppercase tracking-widest">${item.category}</span>
-                        <h4 class="text-white font-bold text-lg mb-4">${item.item_name}</h4>
-                        <div class="flex justify-between items-center pt-4 border-t border-stone-800">
-                            <span class="text-xs text-stone-500 uppercase font-bold">Price</span>
-                            <span class="text-white font-black italic">${item.price_g}g ${item.price_s}s</span>
-                        </div>
-                        <a href="merchant.html?id=${item.seller_id}" class="mt-4 block text-center text-[10px] font-bold text-stone-600 hover:text-white uppercase tracking-tighter transition-colors">View Merchant Profile</a>
-                    </div>
-                `).join('');
+                grid.innerHTML = products.map(item => {
+                    const iconName = categoryIcons[item.category] || 'box';
+                    return `
+                        <a href="merchant.html?id=${item.seller_id}" class="market-card group">
+                            <div class="category-icon-container">
+                                <i data-lucide="${iconName}" class="w-10 h-10 text-stone-500 group-hover:text-yellow-500 transition-colors"></i>
+                            </div>
+                            <div>
+                                <span class="text-[10px] font-black text-yellow-600 uppercase tracking-widest mb-1 block">${item.category}</span>
+                                <h4 class="text-white font-bold text-xl leading-snug">${item.item_name}</h4>
+                            </div>
+                            <div class="mt-8 pt-6 border-t border-stone-800 flex justify-between items-center">
+                                <span class="text-[10px] font-black text-stone-600 uppercase">Price</span>
+                                <span class="text-xl font-black text-white italic">${item.price_g}g ${item.price_s}s</span>
+                            </div>
+                        </a>
+                    `;
+                }).join('');
             }
-
             if (window.lucide) lucide.createIcons();
         }
 
