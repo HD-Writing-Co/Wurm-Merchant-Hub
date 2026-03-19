@@ -3,80 +3,83 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Wurm Hub | Global Market</title>
+    <title>Merchant Dashboard | Wurm Hub</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
         body { background-color: #0b0b0b; color: #e5d5b5; font-family: 'Inter', sans-serif; }
-        .wurm-card {
-            background: #141414;
-            border: 1px solid #222;
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-            position: relative;
-            overflow: hidden;
-        }
-        .wurm-card:hover {
-            border-color: #d4af37;
-            transform: translateY(-8px);
-            background: #1a1a1a;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.6), 0 0 20px rgba(212, 175, 55, 0.1);
-        }
-        .gold-gradient { background: linear-gradient(to right, #d4af37, #f4cf67); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        .ad-banner { background: #0f0f0f; border: 1px dashed #222; display: flex; align-items: center; justify-content: center; color: #222; font-size: 10px; text-transform: uppercase; letter-spacing: 2px; }
+        .dashboard-card { background: #141414; border: 1px solid #222; border-radius: 1.5rem; padding: 2rem; }
+        .input-field { background: #0f0f0f; border: 1px solid #222; color: white; padding: 0.75rem; border-radius: 0.75rem; width: 100%; outline: none; }
+        .input-field:focus { border-color: #d4af37; }
+        .gold-btn { background: #d4af37; color: black; font-weight: 800; padding: 0.75rem 1.5rem; border-radius: 0.75rem; transition: all 0.3s; }
+        .gold-btn:hover { background: #f4cf67; transform: translateY(-2px); }
     </style>
 </head>
 <body class="flex min-h-screen">
 
-    <aside class="w-72 bg-[#0f0f0f] border-r border-stone-900 flex flex-col sticky top-0 h-screen overflow-y-auto">
-        <div class="p-8 flex flex-col h-full">
-            <h1 class="text-2xl font-black gold-gradient tracking-tighter mb-10 italic uppercase">WURM HUB</h1>
-            
-            <div id="nav-auth" class="mb-8">
-                </div>
-
-            <div class="mt-auto">
-                <div class="ad-banner w-full h-64 rounded-2xl px-4">Sidebar Ad Slot</div>
-            </div>
-        </div>
+    <aside class="w-72 bg-[#0f0f0f] border-r border-stone-900 p-8 flex flex-col h-screen sticky top-0">
+        <h1 class="text-2xl font-black italic text-white mb-10 uppercase tracking-tighter">WURM <span class="text-yellow-600">HUB</span></h1>
+        <nav class="space-y-4">
+            <a href="index.html" class="flex items-center gap-3 text-stone-500 hover:text-white transition-all font-bold uppercase text-[10px] tracking-widest">
+                <i data-lucide="arrow-left" class="w-4 h-4"></i> Back to Market
+            </a>
+            <button onclick="handleLogout()" class="flex items-center gap-3 text-red-900 hover:text-red-500 transition-all font-bold uppercase text-[10px] tracking-widest mt-10">
+                <i data-lucide="log-out" class="w-4 h-4"></i> Sign Out
+            </button>
+        </nav>
     </aside>
 
     <main class="flex-1 p-10">
-        <div class="max-w-6xl mx-auto">
-            <div class="ad-banner w-full h-24 rounded-2xl mb-12 uppercase tracking-[0.4em]">Leaderboard Placement</div>
-
-            <div class="grid grid-cols-3 gap-8 mb-16">
-                <div class="p-6 bg-[#111] rounded-2xl border border-stone-900">
-                    <p class="text-[10px] font-black uppercase text-stone-600 tracking-widest mb-1">Total Listings</p>
-                    <h2 id="stat-items" class="text-4xl font-black text-white italic">0</h2>
-                </div>
-                <div class="p-6 bg-[#111] rounded-2xl border border-stone-900">
-                    <p class="text-[10px] font-black uppercase text-stone-600 tracking-widest mb-1">Active Sellers</p>
-                    <h2 id="stat-sellers" class="text-4xl font-black text-white italic">0</h2>
-                </div>
-                <div class="p-6 bg-[#111] rounded-2xl border border-stone-900">
-                    <p class="text-[10px] font-black uppercase text-stone-700 tracking-widest mb-1">Live Servers</p>
-                    <h2 id="stat-servers" class="text-4xl font-black text-yellow-700 italic">1</h2>
-                </div>
-            </div>
-
-            <header class="flex flex-col md:flex-row justify-between items-center gap-6 mb-12">
-                <div>
-                    <h2 class="text-3xl font-bold text-white tracking-tight">Market Catalog</h2>
-                    <p class="text-stone-500 text-sm italic">Real-time inventory from verified merchants.</p>
-                </div>
-                
-                <div class="flex gap-3 w-full max-w-xl">
-                    <div class="relative flex-1">
-                        <i data-lucide="search" class="absolute left-4 top-3.5 text-stone-600 w-4 h-4"></i>
-                        <input type="text" id="search-bar" placeholder="Search items..." class="w-full bg-[#111] border border-stone-900 p-3 pl-12 rounded-xl text-sm outline-none focus:border-yellow-700/50">
+        <div class="max-w-5xl mx-auto">
+            
+            <section class="mb-12">
+                <h3 class="text-xl font-bold text-white mb-6 flex items-center gap-2 uppercase tracking-tighter italic">
+                    <i data-lucide="mail" class="w-5 h-5 text-yellow-600"></i> Customer Inquiries
+                </h3>
+                <div id="inquiry-list" class="grid grid-cols-1 gap-4">
+                    <div class="p-8 border border-dashed border-stone-800 rounded-3xl text-stone-700 italic text-center text-sm">
+                        No new inquiries found.
                     </div>
                 </div>
-            </header>
+            </section>
 
-            <div id="inventory-grid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
-                <div class="col-span-full py-20 text-center text-stone-700 italic uppercase text-xs tracking-widest">Scanning Network...</div>
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-10">
+                <div class="lg:col-span-1">
+                    <div class="dashboard-card sticky top-10">
+                        <h3 class="text-lg font-black text-white mb-6 uppercase italic">Add Listing</h3>
+                        <form id="product-form" class="space-y-4">
+                            <div>
+                                <label class="text-[10px] font-black text-stone-600 uppercase mb-2 block">Item Name</label>
+                                <input type="text" id="item_name" class="input-field" placeholder="e.g. Rare Small Chest" required>
+                            </div>
+                            <div>
+                                <label class="text-[10px] font-black text-stone-600 uppercase mb-2 block">Category</label>
+                                <select id="category" class="input-field">
+                                    <option value="Carpentry">Carpentry</option>
+                                    <option value="Smithing">Smithing</option>
+                                    <option value="Animal Husbandry">Animal Husbandry</option>
+                                    <option value="Mining">Mining</option>
+                                    <option value="Tailoring">Tailoring</option>
+                                    <option value="Misc">Misc</option>
+                                </select>
+                            </div>
+                            <div class="grid grid-cols-3 gap-2">
+                                <div><label class="text-[10px] font-black text-yellow-600 uppercase block mb-1">Gold</label><input type="number" id="price_g" class="input-field" value="0"></div>
+                                <div><label class="text-[10px] font-black text-stone-400 uppercase block mb-1">Silver</label><input type="number" id="price_s" class="input-field" value="0"></div>
+                                <div><label class="text-[10px] font-black text-orange-700 uppercase block mb-1">Copper</label><input type="number" id="price_c" class="input-field" value="0"></div>
+                            </div>
+                            <button type="submit" class="gold-btn w-full mt-4">Post Listing</button>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="lg:col-span-2">
+                    <h3 class="text-lg font-black text-white mb-6 uppercase italic">Your Active Listings</h3>
+                    <div id="my-listings" class="space-y-4">
+                        </div>
+                </div>
             </div>
         </div>
     </main>
@@ -87,80 +90,66 @@
         const _key = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdqZnRtaHZ0ZXlsaHRsd2NvdXdnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg5MTg5MDUsImV4cCI6MjA4NDQ5NDkwNX0.SBELcOhXZrm8fWHTaC1Ujjo-ZL7qUelFjxs7hmWGY5k';
         const client = createClient(_url, _key);
 
-        const iconMap = {
-            'Carpentry': 'hammer', 'Smithing': 'anvil', 'Mining': 'pickaxe', 'Masonry': 'bricks',
-            'Tailoring': 'scissors', 'Farming': 'wheat', 'Cooking': 'utensils', 'Jewelry': 'gem',
-            'Alchemy': 'flask-conical', 'Shipbuilding': 'ship', 'Animal Husbandry': 'horse', 'Misc': 'box'
-        };
+        async function initDashboard() {
+            const { data: { user } } = await client.auth.getUser();
+            if (!user) { window.location.href = 'login.html'; return; }
 
-        async function initHub() {
-            // 1. Update Auth UI
-            const { data: { session } } = await client.auth.getSession();
-            const authDiv = document.getElementById('nav-auth');
-            if (session) {
-                authDiv.innerHTML = `
-                    <a href="dashboard.html" class="block p-5 rounded-2xl bg-yellow-900/5 border border-yellow-700/20 hover:border-yellow-500/50 transition-all group">
-                        <div class="flex items-center gap-4">
-                            <div class="w-12 h-12 rounded-xl bg-yellow-600 flex items-center justify-center shadow-[0_0_15px_rgba(202,138,4,0.3)]"><i data-lucide="layout-dashboard" class="w-6 h-6 text-black"></i></div>
-                            <div><p class="text-white font-bold text-sm">Dashboard</p><p class="text-[10px] text-green-500 font-black uppercase tracking-tighter">Online</p></div>
-                        </div>
-                    </a>`;
-            } else {
-                authDiv.innerHTML = `
-                    <a href="login.html" class="block p-5 rounded-2xl bg-[#111] border border-stone-900 hover:border-yellow-700/50 transition-all group">
-                        <div class="flex items-center gap-4">
-                            <div class="w-12 h-12 rounded-xl bg-stone-900 border border-stone-800 flex items-center justify-center group-hover:bg-yellow-900/20"><i data-lucide="log-in" class="w-6 h-6 text-stone-500 group-hover:text-yellow-500"></i></div>
-                            <div><p class="text-white font-bold text-sm">Sign In</p><p class="text-[10px] text-stone-600 font-black uppercase tracking-tighter">Merchant Access</p></div>
-                        </div>
-                    </a>`;
-            }
-
-            // 2. Fetch Market Data
-            const { data: products } = await client.from('products').select('*');
-            const { data: profiles } = await client.from('profiles').select('id, character_name, server_name');
-            
-            if (products) {
-                document.getElementById('stat-items').innerText = products.length;
-                document.getElementById('stat-sellers').innerText = new Set(products.map(p => p.seller_id)).size;
-                const profileMap = Object.fromEntries(profiles.map(p => [p.id, p]));
-                
-                const grid = document.getElementById('inventory-grid');
-                grid.innerHTML = products.map(item => {
-                    const prof = profileMap[item.seller_id] || { character_name: 'Merchant', server_name: 'Unknown' };
-                    
-                    // Smart Price HTML
-                    let priceHtml = "";
-                    if (item.price_g > 0) priceHtml += `<span class="text-yellow-500">${item.price_g}g</span> `;
-                    if (item.price_s > 0) priceHtml += `<span class="text-stone-300">${item.price_s}s</span> `;
-                    if (item.price_c > 0 || priceHtml === "") priceHtml += `<span class="text-orange-700">${item.price_c}c</span>`;
-                    
-                    const icon = iconMap[item.category] || 'box';
-
-                    return `
-                        <div class="wurm-card rounded-3xl p-8 flex flex-col justify-between min-h-[340px]">
-                            <div>
-                                <div class="flex justify-between items-start mb-8">
-                                    <div class="w-14 h-14 rounded-2xl bg-stone-900 border border-stone-800 flex items-center justify-center text-stone-500 shadow-inner"><i data-lucide="${icon}" class="w-7 h-7"></i></div>
-                                    <span class="text-[10px] font-black uppercase text-stone-700 tracking-[0.2em] bg-black/40 px-3 py-1 rounded-full border border-stone-900">${prof.server_name}</span>
-                                </div>
-                                <span class="text-[10px] font-black uppercase text-yellow-600 tracking-[0.3em] mb-2 block">${item.category}</span>
-                                <h4 class="text-white font-extrabold text-2xl tracking-tight mb-4">${item.item_name}</h4>
-                                <div class="flex gap-3">
-                                    <div class="px-3 py-1.5 bg-black rounded-lg border border-stone-900 text-[10px] font-bold text-stone-500 uppercase">QL <span class="text-yellow-500 ml-1 font-mono">${item.base_ql || '??'}</span></div>
-                                    <p class="text-[10px] text-stone-600 font-bold uppercase italic mt-2">By: ${prof.character_name}</p>
-                                </div>
-                            </div>
-                            <div class="mt-10 pt-6 border-t border-stone-900/50 flex justify-between items-center">
-                                <div><p class="text-[9px] font-black text-stone-700 uppercase mb-1 tracking-widest">Price</p><div class="text-2xl font-black italic tracking-tighter">${priceHtml}</div></div>
-                                <a href="merchant.html?id=${item.seller_id}" class="p-4 bg-stone-900 hover:bg-yellow-600 text-stone-500 hover:text-black rounded-2xl transition-all border border-stone-800"><i data-lucide="shopping-bag" class="w-5 h-5"></i></a>
-                            </div>
-                        </div>`;
-                }).join('');
-            }
+            loadInquiries(user.id);
+            loadMyProducts(user.id);
             if (window.lucide) lucide.createIcons();
         }
 
-        document.addEventListener('DOMContentLoaded', initHub);
+        async function loadInquiries(userId) {
+            const { data } = await client.from('inquiries').select('*').eq('seller_id', userId).order('created_at', {ascending: false});
+            if (data && data.length > 0) {
+                document.getElementById('inquiry-list').innerHTML = data.map(msg => `
+                    <div class="p-6 bg-stone-900 border border-stone-800 rounded-3xl flex justify-between items-center">
+                        <div>
+                            <p class="text-[10px] font-black text-yellow-600 uppercase mb-1">Item: ${msg.item_name}</p>
+                            <p class="text-white text-sm">"${msg.message}"</p>
+                        </div>
+                        <button onclick="deleteInquiry('${msg.id}')" class="text-stone-700 hover:text-red-500 p-2"><i data-lucide="trash-2"></i></button>
+                    </div>`).join('');
+                lucide.createIcons();
+            }
+        }
+
+        async function loadMyProducts(userId) {
+            const { data } = await client.from('products').select('*').eq('seller_id', userId);
+            const grid = document.getElementById('my-listings');
+            if (data) {
+                grid.innerHTML = data.map(item => `
+                    <div class="p-6 bg-[#111] border border-stone-900 rounded-2xl flex justify-between items-center">
+                        <div>
+                            <p class="text-white font-bold">${item.item_name}</p>
+                            <p class="text-[10px] text-stone-600 uppercase font-black">${item.category}</p>
+                        </div>
+                        <button onclick="deleteProduct('${item.id}')" class="text-stone-800 hover:text-red-600 px-4 py-2 border border-stone-800 rounded-lg text-xs uppercase font-bold transition-all">Delete</button>
+                    </div>`).join('');
+            }
+        }
+
+        // --- Event Handlers ---
+        document.getElementById('product-form').onsubmit = async (e) => {
+            e.preventDefault();
+            const { data: { user } } = await client.auth.getUser();
+            const newItem = {
+                seller_id: user.id,
+                item_name: document.getElementById('item_name').value,
+                category: document.getElementById('category').value,
+                price_g: parseInt(document.getElementById('price_g').value),
+                price_s: parseInt(document.getElementById('price_s').value),
+                price_c: parseInt(document.getElementById('price_c').value)
+            };
+            const { error } = await client.from('products').insert([newItem]);
+            if (!error) location.reload();
+        };
+
+        async function deleteInquiry(id) { if(confirm('Delete message?')) { await client.from('inquiries').delete().eq('id', id); location.reload(); }}
+        async function deleteProduct(id) { if(confirm('Remove listing?')) { await client.from('products').delete().eq('id', id); location.reload(); }}
+        async function handleLogout() { await client.auth.signOut(); window.location.href = 'index.html'; }
+
+        document.addEventListener('DOMContentLoaded', initDashboard);
     </script>
 </body>
 </html>
