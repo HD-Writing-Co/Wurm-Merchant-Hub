@@ -13,13 +13,14 @@
         .dashboard-card { background: #141414; border: 1px solid #222; border-radius: 1.5rem; padding: 2rem; }
         .input-field { background: #0f0f0f; border: 1px solid #222; color: white; padding: 0.75rem; border-radius: 0.75rem; width: 100%; outline: none; font-size: 0.875rem; }
         .input-field:focus { border-color: #d4af37; }
-        .gold-btn { background: #d4af37; color: black; font-weight: 800; padding: 0.75rem 1.5rem; border-radius: 0.75rem; transition: all 0.3s; cursor: pointer; }
+        .gold-btn { background: #d4af37; color: black; font-weight: 800; padding: 0.75rem 1.5rem; border-radius: 0.75rem; transition: all 0.3s; cursor: pointer; border: none; }
         .gold-btn:hover { background: #f4cf67; transform: translateY(-2px); }
         .edit-mode { border: 2px solid #3b82f6 !important; box-shadow: 0 0 15px rgba(59, 130, 246, 0.2); }
         .message-pill { background: #1a1a1a; border-left: 4px solid #d4af37; transition: all 0.2s; }
         .message-pill:hover { background: #222; }
-        #message-container::-webkit-scrollbar { width: 4px; }
-        #message-container::-webkit-scrollbar-thumb { background: #222; border-radius: 10px; }
+        /* Fix for visibility of up/down arrow buttons on dark inputs */
+        input[type="number"]::-webkit-inner-spin-button, 
+        input[type="number"]::-webkit-outer-spin-button { opacity: 1; filter: invert(1) brightness(2); }
     </style>
 </head>
 <body class="flex min-h-screen">
@@ -40,12 +41,38 @@
         <div class="max-w-6xl mx-auto">
             
             <section class="mb-10 dashboard-card">
+                <h3 class="text-lg font-black text-white mb-6 uppercase italic">Merchant Profile Settings</h3>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div>
+                        <label class="text-[10px] font-black text-stone-600 uppercase mb-2 block">Character Name</label>
+                        <input type="text" id="prof_name" class="input-field" placeholder="Character Name">
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-black text-stone-600 uppercase mb-2 block">Server</label>
+                        <select id="prof_server" class="input-field">
+                            <option value="Cadence">Cadence</option>
+                            <option value="Harmony">Harmony</option>
+                            <option value="Melody">Melody</option>
+                            <option value="Pristine">Pristine</option>
+                        </select>
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="text-[10px] font-black text-stone-600 uppercase mb-2 block">Merchant Bio</label>
+                        <input type="text" id="prof_bio" class="input-field" placeholder="Describe your shop...">
+                    </div>
+                    <div class="flex items-end">
+                        <button onclick="updateProfile()" class="gold-btn w-full">Update Profile</button>
+                    </div>
+                </div>
+            </section>
+
+            <section class="mb-10 dashboard-card">
                 <div class="flex justify-between items-center mb-6">
                     <h3 class="text-lg font-black text-white uppercase italic">Customer Inquiries</h3>
-                    <span id="msg-count" class="bg-yellow-600 text-black text-[10px] font-black px-2 py-0.5 rounded-full">0 Total</span>
+                    <span id="msg-count" class="bg-yellow-600 text-black text-[10px] font-black px-2 py-0.5 rounded-full">0 New</span>
                 </div>
                 <div id="message-container" class="space-y-4 max-h-64 overflow-y-auto pr-2">
-                    <p class="text-stone-700 italic text-sm">Checking for messages...</p>
+                    <p class="text-stone-700 italic text-sm">Loading messages...</p>
                 </div>
             </section>
             
@@ -106,14 +133,14 @@
                             <label class="text-[10px] font-black text-stone-600 uppercase block">Pricing</label>
                             <div class="grid grid-cols-4 gap-1">
                                 <div><span class="text-[9px] text-yellow-500 uppercase font-black ml-1">Gold</span><input type="number" id="price_g" class="input-field !p-2" value="0"></div>
-                                <div><span class="text-[9px] text-stone-400 uppercase font-black ml-1">Silv</span><input type="number" id="price_s" class="input-field !p-2" value="0"></div>
-                                <div><span class="text-[9px] text-orange-700 uppercase font-black ml-1">Copp</span><input type="number" id="price_c" class="input-field !p-2" value="0"></div>
-                                <div><span class="text-[9px] text-stone-600 uppercase font-black ml-1">Iron</span><input type="number" id="price_i" class="input-field !p-2" value="0"></div>
+                                <div><span class="text-[9px] text-stone-300 uppercase font-black ml-1">Silv</span><input type="number" id="price_s" class="input-field !p-2" value="0"></div>
+                                <div><span class="text-[9px] text-orange-600 uppercase font-black ml-1">Copp</span><input type="number" id="price_c" class="input-field !p-2" value="0"></div>
+                                <div><span class="text-[9px] text-stone-500 uppercase font-black ml-1">Iron</span><input type="number" id="price_i" class="input-field !p-2" value="0"></div>
                             </div>
 
                             <div class="flex gap-2">
                                 <button type="submit" id="submit-btn" class="gold-btn flex-1">Post Listing</button>
-                                <button type="button" id="cancel-edit" onclick="resetForm()" class="hidden bg-stone-800 text-white p-3 rounded-xl hover:bg-stone-700 transition-colors"><i data-lucide="x" class="w-5 h-5"></i></button>
+                                <button type="button" id="cancel-edit" onclick="resetForm()" class="hidden bg-stone-800 text-white p-3 rounded-xl hover:bg-stone-700"><i data-lucide="x" class="w-5 h-5"></i></button>
                             </div>
                         </form>
                     </div>
@@ -138,6 +165,14 @@
         async function init() {
             const { data: { user } } = await client.auth.getUser();
             if (!user) { window.location.href = 'login.html'; return; }
+            
+            const { data: profile } = await client.from('profiles').select('*').eq('id', user.id).maybeSingle();
+            if (profile) {
+                document.getElementById('prof_name').value = profile.character_name || "";
+                document.getElementById('prof_server').value = profile.server_name || "Cadence";
+                document.getElementById('prof_bio').value = profile.bio || "";
+            }
+            
             loadMyProducts(user.id);
             loadMessages(user.id);
         }
@@ -149,7 +184,7 @@
 
             if (!data || data.length === 0) {
                 container.innerHTML = `<p class="text-stone-700 italic text-sm">No new messages.</p>`;
-                countBadge.innerText = "0 Total";
+                countBadge.innerText = "0 New";
                 return;
             }
 
@@ -172,13 +207,28 @@
         }
 
         window.deleteMessage = async (id) => {
-            if (confirm('Delete this message?')) {
+            if (confirm('Permanently delete this inquiry?')) {
                 const { error } = await client.from('inquiries').delete().eq('id', id);
                 if (!error) {
                     const { data: { user } } = await client.auth.getUser();
                     loadMessages(user.id);
+                } else {
+                    alert("Delete failed: " + error.message);
                 }
             }
+        };
+
+        window.updateProfile = async () => {
+            const { data: { user } } = await client.auth.getUser();
+            const { error } = await client.from('profiles').upsert({
+                id: user.id,
+                character_name: document.getElementById('prof_name').value,
+                server_name: document.getElementById('prof_server').value,
+                bio: document.getElementById('prof_bio').value,
+                updated_at: new Date()
+            });
+            if (!error) alert("Profile updated!");
+            else alert("Error updating profile: " + error.message);
         };
 
         async function loadMyProducts(userId) {
@@ -186,7 +236,7 @@
             const container = document.getElementById('my-listings');
             
             if (!data || data.length === 0) {
-                container.innerHTML = `<div class="p-12 text-center text-stone-700 italic border border-dashed border-stone-900 rounded-3xl">No listings yet. Add your first item!</div>`;
+                container.innerHTML = `<div class="p-12 text-center text-stone-700 italic border border-dashed border-stone-900 rounded-3xl">No listings yet.</div>`;
                 return;
             }
 
@@ -195,11 +245,9 @@
                     <div class="flex gap-4 items-center">
                         <div class="w-10 h-10 bg-stone-900 rounded-lg flex items-center justify-center text-stone-600"><i data-lucide="package" class="w-5 h-5"></i></div>
                         <div>
-                            <p class="text-white font-bold leading-none mb-1">${item.item_name} <span class="text-yellow-600 text-[10px] ml-2 font-mono">QL ${item.base_ql}</span></p>
-                            <div class="flex gap-2 text-[9px] font-black uppercase tracking-widest text-stone-600">
-                                <span>${item.category}</span>
-                                <span>•</span>
-                                <span>Qty: ${item.quantity}</span>
+                            <p class="text-white font-bold mb-1">${item.item_name} <span class="text-yellow-600 text-[10px] ml-2 font-mono">QL ${item.base_ql}</span></p>
+                            <div class="flex gap-2 text-[9px] font-black uppercase text-stone-600">
+                                <span>${item.category}</span> • <span>Qty: ${item.quantity}</span>
                             </div>
                         </div>
                     </div>
@@ -207,12 +255,12 @@
                         <div class="text-right mr-4 font-mono text-xs">
                             ${item.price_g > 0 ? `<span class="text-yellow-500">${item.price_g}g</span>` : ''}
                             ${item.price_s > 0 ? `<span class="text-stone-300 ml-1">${item.price_s}s</span>` : ''}
-                            ${item.price_c > 0 ? `<span class="text-orange-700 ml-1">${item.price_c}c</span>` : ''}
-                            ${item.price_i > 0 ? `<span class="text-stone-600 ml-1">${item.price_i}i</span>` : ''}
+                            ${item.price_c > 0 ? `<span class="text-orange-600 ml-1">${item.price_c}c</span>` : ''}
+                            ${item.price_i > 0 ? `<span class="text-stone-500 ml-1">${item.price_i}i</span>` : ''}
                         </div>
                         <div class="flex gap-2">
-                            <button onclick="editProduct(${JSON.stringify(item).replace(/"/g, '&quot;')})" class="p-2 hover:bg-blue-900/20 text-stone-600 hover:text-blue-400 rounded-lg transition-all"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
-                            <button onclick="deleteProduct('${item.id}')" class="p-2 hover:bg-red-900/20 text-stone-600 hover:text-red-500 rounded-lg transition-all"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                            <button onclick="editProduct(${JSON.stringify(item).replace(/"/g, '&quot;')})" class="p-2 text-stone-600 hover:text-blue-400"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
+                            <button onclick="deleteProduct('${item.id}')" class="p-2 text-stone-600 hover:text-red-500"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
                         </div>
                     </div>
                 </div>`).join('');
@@ -264,33 +312,22 @@
                 seller_id: user.id
             };
 
-            let error;
-            if (editId) {
-                ({ error } = await client.from('products').update(itemData).eq('id', editId));
-            } else {
-                ({ error } = await client.from('products').insert([itemData]));
-            }
+            if (editId) await client.from('products').update(itemData).eq('id', editId);
+            else await client.from('products').insert([itemData]);
 
-            if (!error) {
-                resetForm();
-                loadMyProducts(user.id);
-            } else {
-                alert("Error: " + error.message);
-            }
+            resetForm();
+            loadMyProducts(user.id);
         };
 
         window.deleteProduct = async (id) => {
-            if (confirm('Permanently remove this listing?')) {
-                const { error } = await client.from('products').delete().eq('id', id);
-                if (!error) {
-                    const { data: { user } } = await client.auth.getUser();
-                    loadMyProducts(user.id);
-                }
+            if (confirm('Remove this listing?')) {
+                await client.from('products').delete().eq('id', id);
+                const { data: { user } } = await client.auth.getUser();
+                loadMyProducts(user.id);
             }
         };
 
         window.handleLogout = async () => { await client.auth.signOut(); window.location.href = 'index.html'; };
-
         document.addEventListener('DOMContentLoaded', init);
     </script>
 </body>
