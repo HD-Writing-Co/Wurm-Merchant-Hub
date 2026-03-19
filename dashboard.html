@@ -13,11 +13,16 @@
         .dashboard-card { background: #141414; border: 1px solid #222; border-radius: 1.5rem; padding: 2rem; }
         .input-field { background: #0f0f0f; border: 1px solid #222; color: white; padding: 0.75rem; border-radius: 0.75rem; width: 100%; outline: none; font-size: 0.875rem; }
         .input-field:focus { border-color: #d4af37; }
-        .gold-btn { background: #d4af37; color: black; font-weight: 800; padding: 0.75rem 1.5rem; border-radius: 0.75rem; transition: all 0.3s; cursor: pointer; }
+        .gold-btn { background: #d4af37; color: black; font-weight: 800; padding: 0.75rem 1.5rem; border-radius: 0.75rem; transition: all 0.3s; cursor: pointer; border: none; }
         .gold-btn:hover { background: #f4cf67; transform: translateY(-2px); }
-        .edit-mode { border-color: #3b82f6 !important; box-shadow: 0 0 15px rgba(59, 130, 246, 0.2); }
+        .edit-mode { border: 2px solid #3b82f6 !important; box-shadow: 0 0 15px rgba(59, 130, 246, 0.2); }
         .message-pill { background: #1a1a1a; border-left: 4px solid #d4af37; transition: all 0.2s; }
         .message-pill:hover { background: #222; }
+        #message-container::-webkit-scrollbar { width: 4px; }
+        #message-container::-webkit-scrollbar-thumb { background: #222; border-radius: 10px; }
+        /* Ensure number spinners are visible on dark background */
+        input[type="number"]::-webkit-inner-spin-button, 
+        input[type="number"]::-webkit-outer-spin-button { opacity: 1; filter: invert(1); }
     </style>
 </head>
 <body class="flex min-h-screen">
@@ -42,7 +47,7 @@
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div>
                         <label class="text-[10px] font-black text-stone-600 uppercase mb-2 block">Character Name</label>
-                        <input type="text" id="prof_name" class="input-field" placeholder="Wurm Character Name">
+                        <input type="text" id="prof_name" class="input-field" placeholder="Character Name">
                     </div>
                     <div>
                         <label class="text-[10px] font-black text-stone-600 uppercase mb-2 block">Home Server</label>
@@ -69,7 +74,7 @@
                     <span id="msg-count" class="bg-yellow-600 text-black text-[10px] font-black px-2 py-0.5 rounded-full">0 New</span>
                 </div>
                 <div id="message-container" class="space-y-4 max-h-64 overflow-y-auto pr-2">
-                    <p class="text-stone-600 italic text-sm">Checking for new messages...</p>
+                    <p class="text-stone-700 italic text-sm">Loading messages...</p>
                 </div>
             </section>
             
@@ -79,10 +84,12 @@
                         <h3 id="form-title" class="text-lg font-black text-white mb-6 uppercase italic">Add New Listing</h3>
                         <form id="product-form" class="space-y-4">
                             <input type="hidden" id="edit-id">
+                            
                             <div>
                                 <label class="text-[10px] font-black text-stone-600 uppercase mb-2 block">Item Name</label>
                                 <input type="text" id="item_name" class="input-field" placeholder="Small Chest" required>
                             </div>
+
                             <div class="grid grid-cols-2 gap-4">
                                 <div>
                                     <label class="text-[10px] font-black text-stone-600 uppercase mb-2 block">Quality (QL)</label>
@@ -90,32 +97,62 @@
                                 </div>
                                 <div>
                                     <label class="text-[10px] font-black text-stone-600 uppercase mb-2 block">Quantity</label>
-                                    <input type="text" id="quantity" class="input-field" value="1">
+                                    <div class="flex gap-1">
+                                        <input type="text" id="quantity" class="input-field" value="1">
+                                        <button type="button" onclick="document.getElementById('quantity').value='Bulk'" class="bg-stone-800 text-[10px] px-2 rounded-lg hover:text-white uppercase font-bold">Bulk</button>
+                                    </div>
                                 </div>
                             </div>
+
                             <div>
                                 <label class="text-[10px] font-black text-stone-600 uppercase mb-2 block">Category</label>
                                 <select id="category" class="input-field">
-                                    <option value="Carpentry">Carpentry</option>
-                                    <option value="Smithing">Smithing</option>
-                                    <option value="Tools">Tools</option>
-                                    <option value="Misc">Misc</option>
+                                    <optgroup label="Crafting">
+                                        <option value="Carpentry">Carpentry</option>
+                                        <option value="Smithing">Smithing</option>
+                                        <option value="Masonry">Masonry</option>
+                                        <option value="Tailoring">Tailoring</option>
+                                        <option value="Leatherworking">Leatherworking</option>
+                                        <option value="Jewelry">Jewelry</option>
+                                        <option value="Pottery">Pottery</option>
+                                    </optgroup>
+                                    <optgroup label="Equipment">
+                                        <option value="Armor">Armor</option>
+                                        <option value="Weapons">Weapons</option>
+                                        <option value="Tools">Tools</option>
+                                        <option value="Ships">Ships / Marine</option>
+                                    </optgroup>
+                                    <optgroup label="Nature">
+                                        <option value="Animal Husbandry">Animal Husbandry</option>
+                                        <option value="Farming">Farming / Seeds</option>
+                                        <option value="Cooking">Cooking / Food</option>
+                                        <option value="Alchemy">Alchemy / Potions</option>
+                                    </optgroup>
+                                    <option value="Misc">Miscellaneous / Rifts</option>
                                 </select>
                             </div>
+
+                            <label class="text-[10px] font-black text-stone-600 uppercase block">Pricing</label>
                             <div class="grid grid-cols-4 gap-1">
-                                <input type="number" id="price_g" class="input-field !p-2" value="0">
-                                <input type="number" id="price_s" class="input-field !p-2" value="0">
-                                <input type="number" id="price_c" class="input-field !p-2" value="0">
-                                <input type="number" id="price_i" class="input-field !p-2" value="0">
+                                <div class="flex flex-col"><span class="text-[9px] text-yellow-500 uppercase font-black mb-1 text-center">Gold</span><input type="number" id="price_g" class="input-field !p-2" value="0"></div>
+                                <div class="flex flex-col"><span class="text-[9px] text-stone-400 uppercase font-black mb-1 text-center">Silv</span><input type="number" id="price_s" class="input-field !p-2" value="0"></div>
+                                <div class="flex flex-col"><span class="text-[9px] text-orange-700 uppercase font-black mb-1 text-center">Copp</span><input type="number" id="price_c" class="input-field !p-2" value="0"></div>
+                                <div class="flex flex-col"><span class="text-[9px] text-stone-600 uppercase font-black mb-1 text-center">Iron</span><input type="number" id="price_i" class="input-field !p-2" value="0"></div>
                             </div>
-                            <button type="submit" id="submit-btn" class="gold-btn w-full">Post Listing</button>
+
+                            <div class="flex gap-2">
+                                <button type="submit" id="submit-btn" class="gold-btn flex-1">Post Listing</button>
+                                <button type="button" id="cancel-edit" onclick="resetForm()" class="hidden bg-stone-800 text-white p-3 rounded-xl hover:bg-stone-700"><i data-lucide="x" class="w-5 h-5"></i></button>
+                            </div>
                         </form>
                     </div>
                 </div>
 
                 <div class="lg:col-span-2">
                     <h3 class="text-lg font-black text-white mb-6 uppercase italic">Active Inventory</h3>
-                    <div id="my-listings" class="space-y-3"></div>
+                    <div id="my-listings" class="space-y-3">
+                        <div class="p-12 text-center text-stone-700 italic border border-dashed border-stone-900 rounded-3xl">Loading items...</div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -131,9 +168,7 @@
             const { data: { user } } = await client.auth.getUser();
             if (!user) { window.location.href = 'login.html'; return; }
             
-            // Fixed: Use .maybeSingle() to prevent crash if profile doesn't exist yet
             const { data: profile } = await client.from('profiles').select('*').eq('id', user.id).maybeSingle();
-            
             if (profile) {
                 document.getElementById('prof_name').value = profile.character_name || "";
                 document.getElementById('prof_server').value = profile.server_name || "Cadence";
@@ -170,31 +205,32 @@
                     </button>
                 </div>
             `).join('');
-            if (window.lucide) lucide.createIcons();
+            lucide.createIcons();
         }
 
-        async function deleteMessage(id) {
-            if (confirm('Delete this message?')) {
-                await client.from('inquiries').delete().eq('id', id);
-                const { data: { user } } = await client.auth.getUser();
-                loadMessages(user.id);
+        window.deleteMessage = async (id) => {
+            if (confirm('Permanently delete this inquiry?')) {
+                const { error } = await client.from('inquiries').delete().eq('id', id);
+                if (!error) {
+                    const { data: { user } } = await client.auth.getUser();
+                    loadMessages(user.id);
+                } else {
+                    alert("Delete failed: " + error.message);
+                }
             }
-        }
+        };
 
-        async function updateProfile() {
+        window.updateProfile = async () => {
             const { data: { user } } = await client.auth.getUser();
-            const updates = {
+            await client.from('profiles').upsert({
                 id: user.id,
                 character_name: document.getElementById('prof_name').value,
                 server_name: document.getElementById('prof_server').value,
                 bio: document.getElementById('prof_bio').value,
                 updated_at: new Date()
-            };
-
-            const { error } = await client.from('profiles').upsert(updates);
-            if (error) alert("Error: " + error.message);
-            else alert("Profile updated!");
-        }
+            });
+            alert("Merchant settings updated!");
+        };
 
         async function loadMyProducts(userId) {
             const { data } = await client.from('products').select('*').eq('seller_id', userId).order('created_at', {ascending: false});
@@ -205,31 +241,97 @@
                 return;
             }
 
-            container.innerHTML = data.map(item => `
+            container.innerHTML = data.map(item => {
+                const itemJson = JSON.stringify(item).replace(/"/g, '&quot;');
+                return `
                 <div class="p-5 bg-[#111] border border-stone-900 rounded-2xl flex justify-between items-center group hover:border-stone-700 transition-all">
                     <div class="flex gap-4 items-center">
                         <div class="w-10 h-10 bg-stone-900 rounded-lg flex items-center justify-center text-stone-600"><i data-lucide="package" class="w-5 h-5"></i></div>
                         <div>
-                            <p class="text-white font-bold leading-none mb-1">${item.item_name} <span class="text-yellow-600 text-[10px] ml-2 font-mono">QL ${item.base_ql}</span></p>
-                            <div class="flex gap-2 text-[9px] font-black uppercase tracking-widest text-stone-600">
-                                <span>${item.category}</span>
-                                <span>•</span>
-                                <span>Qty: ${item.quantity}</span>
+                            <p class="text-white font-bold mb-1">${item.item_name} <span class="text-yellow-600 text-[10px] ml-2 font-mono">QL ${item.base_ql}</span></p>
+                            <div class="flex gap-2 text-[9px] font-black uppercase text-stone-600">
+                                <span>${item.category}</span> • <span>Qty: ${item.quantity}</span>
                             </div>
                         </div>
                     </div>
-                    <div class="flex items-center gap-4">
-                        <button onclick="deleteProduct('${item.id}')" class="p-2 text-stone-600 hover:text-red-500 transition-all"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                    <div class="flex gap-2">
+                        <button onclick="editProduct(${itemJson})" class="p-2 text-stone-600 hover:text-blue-400"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
+                        <button onclick="deleteProduct('${item.id}')" class="p-2 text-stone-600 hover:text-red-500"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
                     </div>
-                </div>`).join('');
+                </div>`;
+            }).join('');
             lucide.createIcons();
         }
 
-        window.deleteProduct = async (id) => {
-            if (confirm('Permanently remove this listing?')) {
-                await client.from('products').delete().eq('id', id);
-                const { data: { user } } = await client.auth.getUser();
+        window.editProduct = (item) => {
+            document.getElementById('form-container').classList.add('edit-mode');
+            document.getElementById('form-title').innerText = "Edit Listing";
+            document.getElementById('submit-btn').innerText = "Update Listing";
+            document.getElementById('cancel-edit').classList.remove('hidden');
+            
+            document.getElementById('edit-id').value = item.id;
+            document.getElementById('item_name').value = item.item_name;
+            document.getElementById('category').value = item.category;
+            document.getElementById('base_ql').value = item.base_ql;
+            document.getElementById('quantity').value = item.quantity;
+            document.getElementById('price_g').value = item.price_g;
+            document.getElementById('price_s').value = item.price_s;
+            document.getElementById('price_c').value = item.price_c;
+            document.getElementById('price_i').value = item.price_i || 0;
+            
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        };
+
+        window.resetForm = () => {
+            document.getElementById('product-form').reset();
+            document.getElementById('edit-id').value = '';
+            document.getElementById('form-container').classList.remove('edit-mode');
+            document.getElementById('form-title').innerText = "Add New Listing";
+            document.getElementById('submit-btn').innerText = "Post Listing";
+            document.getElementById('cancel-edit').classList.add('hidden');
+        };
+
+        document.getElementById('product-form').onsubmit = async (e) => {
+            e.preventDefault();
+            const { data: { user } } = await client.auth.getUser();
+            const editId = document.getElementById('edit-id').value;
+            
+            const itemData = {
+                item_name: document.getElementById('item_name').value,
+                category: document.getElementById('category').value,
+                base_ql: parseFloat(document.getElementById('base_ql').value),
+                quantity: document.getElementById('quantity').value,
+                price_g: parseInt(document.getElementById('price_g').value) || 0,
+                price_s: parseInt(document.getElementById('price_s').value) || 0,
+                price_c: parseInt(document.getElementById('price_c').value) || 0,
+                price_i: parseInt(document.getElementById('price_i').value) || 0,
+                seller_id: user.id
+            };
+
+            let error;
+            if (editId) {
+                ({ error } = await client.from('products').update(itemData).eq('id', editId));
+            } else {
+                ({ error } = await client.from('products').insert([itemData]));
+            }
+
+            if (!error) {
+                resetForm();
                 loadMyProducts(user.id);
+            } else {
+                alert("Error saving listing: " + error.message);
+            }
+        };
+
+        window.deleteProduct = async (id) => {
+            if (confirm('Remove this listing?')) {
+                const { error } = await client.from('products').delete().eq('id', id);
+                if (!error) {
+                    const { data: { user } } = await client.auth.getUser();
+                    loadMyProducts(user.id);
+                } else {
+                    alert("Delete failed: " + error.message);
+                }
             }
         };
 
