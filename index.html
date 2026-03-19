@@ -10,21 +10,12 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
         body { background-color: #0b0b0b; color: #e5d5b5; font-family: 'Inter', sans-serif; }
-        .wurm-card {
-            background: #141414;
-            border: 1px solid #222;
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        .wurm-card:hover {
-            border-color: #d4af37;
-            transform: translateY(-8px);
-            box-shadow: 0 20px 40px rgba(0,0,0,0.6);
-        }
+        .wurm-card { background: #141414; border: 1px solid #222; transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+        .wurm-card:hover { border-color: #d4af37; transform: translateY(-8px); box-shadow: 0 20px 40px rgba(0,0,0,0.6); }
         .gold-gradient { background: linear-gradient(to right, #d4af37, #f4cf67); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
     </style>
 </head>
 <body class="flex min-h-screen">
-
     <aside class="w-72 bg-[#0f0f0f] border-r border-stone-900 p-8 flex flex-col h-screen sticky top-0">
         <h1 class="text-2xl font-black gold-gradient italic mb-10 uppercase tracking-tighter">Wurm Hub</h1>
         <div id="nav-auth" class="mb-8"></div>
@@ -55,7 +46,7 @@
                 </div>
                 <div class="w-full max-w-md relative">
                     <i data-lucide="search" class="absolute left-4 top-3.5 text-stone-600 w-4 h-4"></i>
-                    <input type="text" id="search-bar" placeholder="Search items..." class="w-full bg-stone-900/30 border border-stone-800 p-3 pl-12 rounded-2xl text-sm outline-none focus:border-yellow-700/50">
+                    <input type="text" id="search-bar" placeholder="Search items or sellers..." class="w-full bg-stone-900/30 border border-stone-800 p-3 pl-12 rounded-2xl text-sm outline-none focus:border-yellow-700/50">
                 </div>
             </header>
 
@@ -71,86 +62,69 @@
         const _key = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdqZnRtaHZ0ZXlsaHRsd2NvdXdnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg5MTg5MDUsImV4cCI6MjA4NDQ5NDkwNX0.SBELcOhXZrm8fWHTaC1Ujjo-ZL7qUelFjxs7hmWGY5k';
         const client = createClient(_url, _key);
 
-        const iconMap = {
-            'Carpentry': 'hammer', 'Smithing': 'anvil', 'Mining': 'pickaxe', 'Masonry': 'bricks',
-            'Tailoring': 'scissors', 'Farming': 'wheat', 'Cooking': 'utensils', 'Jewelry': 'gem',
-            'Alchemy': 'flask-conical', 'Shipbuilding': 'ship', 'Animal Husbandry': 'horse', 'Misc': 'box',
-            'Leatherworking': 'tent', 'Pottery': 'archive', 'Armor': 'shield', 'Weapons': 'sword', 'Tools': 'wrench'
-        };
+        let allProducts = [];
+        let allProfiles = {};
+
+        const iconMap = { 'Carpentry': 'hammer', 'Smithing': 'anvil', 'Animal Husbandry': 'horse', 'Misc': 'box', 'Tailoring': 'scissors', 'Farming': 'wheat' };
 
         async function init() {
-            // Auth State
             const { data: { session } } = await client.auth.getSession();
-            if (session) {
-                document.getElementById('nav-auth').innerHTML = `
-                    <a href="dashboard.html" class="block p-5 rounded-2xl bg-yellow-900/5 border border-yellow-700/20 hover:border-yellow-500/50 transition-all group">
-                        <div class="flex items-center gap-4">
-                            <div class="w-12 h-12 rounded-xl bg-yellow-600 flex items-center justify-center shadow-lg"><i data-lucide="layout-dashboard" class="w-6 h-6 text-black"></i></div>
-                            <div><p class="text-white font-bold text-sm">Dashboard</p><p class="text-[10px] text-green-500 font-black uppercase tracking-tighter">Online</p></div>
-                        </div>
-                    </a>`;
-            } else {
-                document.getElementById('nav-auth').innerHTML = `
-                    <a href="login.html" class="block p-5 rounded-2xl bg-stone-900 border border-stone-800 hover:border-yellow-700/50 transition-all group">
-                        <div class="flex items-center gap-4">
-                            <div class="w-12 h-12 rounded-xl bg-stone-800 border border-stone-700 flex items-center justify-center"><i data-lucide="log-in" class="w-6 h-6 text-stone-500"></i></div>
-                            <div><p class="text-white font-bold text-sm">Sign In</p><p class="text-[10px] text-stone-600 font-black uppercase tracking-tighter">Merchant Access</p></div>
-                        </div>
-                    </a>`;
-            }
+            const authDiv = document.getElementById('nav-auth');
+            authDiv.innerHTML = session ? `<a href="dashboard.html" class="block p-5 rounded-2xl bg-yellow-900/5 border border-yellow-700/20 hover:border-yellow-500/50 transition-all"><div class="flex items-center gap-4"><div class="w-12 h-12 rounded-xl bg-yellow-600 flex items-center justify-center"><i data-lucide="layout-dashboard" class="w-6 h-6 text-black"></i></div><div><p class="text-white font-bold text-sm">Dashboard</p></div></div></a>` : `<a href="login.html" class="block p-5 rounded-2xl bg-stone-900 border border-stone-800 hover:border-yellow-700/50 transition-all"><div class="flex items-center gap-4"><div class="w-12 h-12 rounded-xl bg-stone-800 flex items-center justify-center"><i data-lucide="log-in" class="w-6 h-6 text-stone-500"></i></div><div><p class="text-white font-bold text-sm">Sign In</p></div></div></a>`;
 
-            // Load Items
             const { data: products } = await client.from('products').select('*');
-            const { data: profiles } = await client.from('profiles').select('id, character_name, server_name');
+            const { data: profiles } = await client.from('profiles').select('*');
             
-            if (products) {
+            if (products && profiles) {
+                allProducts = products;
+                allProfiles = Object.fromEntries(profiles.map(p => [p.id, p]));
                 document.getElementById('stat-items').innerText = products.length;
                 document.getElementById('stat-sellers').innerText = new Set(products.map(p => p.seller_id)).size;
-                const profileMap = Object.fromEntries(profiles.map(p => [p.id, p]));
-                
-                const grid = document.getElementById('inventory-grid');
-                grid.innerHTML = products.map(item => {
-                    const prof = profileMap[item.seller_id] || { character_name: 'Merchant', server_name: 'Unknown' };
-                    
-                    // Smart Price Logic (Matching Merchant Page)
-                    let pHtml = "";
-                    if (item.price_g > 0) pHtml += `<span class="text-yellow-500">${item.price_g}g</span> `;
-                    if (item.price_s > 0) pHtml += `<span class="text-stone-300">${item.price_s}s</span> `;
-                    if (item.price_c > 0) pHtml += `<span class="text-orange-700">${item.price_c}c</span> `;
-                    if (item.price_i > 0 || pHtml === "") pHtml += `<span class="text-stone-600">${item.price_i || 0}i</span>`;
-                    
-                    const icon = iconMap[item.category] || 'box';
-
-                    return `
-                        <div class="wurm-card rounded-3xl p-8 flex flex-col justify-between min-h-[340px]">
-                            <div>
-                                <div class="flex justify-between items-start mb-8">
-                                    <div class="w-14 h-14 rounded-2xl bg-stone-900 border border-stone-800 flex items-center justify-center text-stone-500 shadow-inner">
-                                        <i data-lucide="${icon}" class="w-7 h-7"></i>
-                                    </div>
-                                    <span class="text-[10px] font-black uppercase text-stone-700 tracking-[0.2em] bg-black/40 px-3 py-1 rounded-full border border-stone-900">${prof.server_name}</span>
-                                </div>
-                                <span class="text-[10px] font-black uppercase text-yellow-600 tracking-[0.3em] mb-2 block">${item.category}</span>
-                                <h4 class="text-white font-extrabold text-2xl mb-4">${item.item_name}</h4>
-                                <div class="flex flex-col gap-3">
-                                    <div class="flex gap-2">
-                                        <div class="px-3 py-1 bg-black rounded border border-stone-800 text-[10px] text-stone-500 font-black">QL: <span class="text-yellow-500">${item.base_ql || '??'}</span></div>
-                                        <div class="px-3 py-1 bg-black rounded border border-stone-800 text-[10px] text-stone-500 font-black">STOCK: <span class="text-white">${item.quantity || '1'}</span></div>
-                                    </div>
-                                    <a href="merchant.html?id=${item.seller_id}" class="text-[10px] font-black uppercase italic text-stone-500 hover:text-yellow-500 transition-colors">
-                                        Seller: <span class="text-stone-300 underline decoration-yellow-600/50 underline-offset-4">${prof.character_name}</span>
-                                    </a>
-                                </div>
-                            </div>
-                            <div class="mt-10 pt-6 border-t border-stone-900/50 flex justify-between items-center">
-                                <div><p class="text-[9px] font-black text-stone-700 uppercase mb-1 tracking-widest">Price</p><div class="text-2xl font-black italic tracking-tighter">${pHtml}</div></div>
-                                <a href="merchant.html?id=${item.seller_id}" class="p-4 bg-stone-900 hover:bg-yellow-600 text-stone-500 hover:text-black rounded-2xl transition-all border border-stone-800">
-                                    <i data-lucide="shopping-bag" class="w-5 h-5"></i>
-                                </a>
-                            </div>
-                        </div>`;
-                }).join('');
+                renderGrid(allProducts);
             }
+
+            document.getElementById('search-bar').addEventListener('input', (e) => {
+                const term = e.target.value.toLowerCase();
+                const filtered = allProducts.filter(item => {
+                    const seller = allProfiles[item.seller_id]?.character_name.toLowerCase() || "";
+                    return item.item_name.toLowerCase().includes(term) || seller.includes(term);
+                });
+                renderGrid(filtered);
+            });
+        }
+
+        function renderGrid(items) {
+            const grid = document.getElementById('inventory-grid');
+            grid.innerHTML = items.map(item => {
+                const prof = allProfiles[item.seller_id] || { character_name: 'Merchant', server_name: 'Unknown' };
+                let pHtml = "";
+                if (item.price_g > 0) pHtml += `<span class="text-yellow-500">${item.price_g}g</span> `;
+                if (item.price_s > 0) pHtml += `<span class="text-stone-300">${item.price_s}s</span> `;
+                if (item.price_c > 0) pHtml += `<span class="text-orange-700">${item.price_c}c</span> `;
+                if (item.price_i > 0 || pHtml === "") pHtml += `<span class="text-stone-600">${item.price_i || 0}i</span>`;
+
+                return `<div class="wurm-card rounded-3xl p-8 flex flex-col justify-between min-h-[340px]">
+                    <div>
+                        <div class="flex justify-between items-start mb-8">
+                            <div class="w-14 h-14 rounded-2xl bg-stone-900 border border-stone-800 flex items-center justify-center text-stone-500 shadow-inner"><i data-lucide="${iconMap[item.category] || 'box'}" class="w-7 h-7"></i></div>
+                            <span class="text-[10px] font-black uppercase text-stone-700 tracking-[0.2em] bg-black/40 px-3 py-1 rounded-full border border-stone-900">${prof.server_name}</span>
+                        </div>
+                        <span class="text-[10px] font-black uppercase text-yellow-600 tracking-[0.3em] mb-2 block">${item.category}</span>
+                        <h4 class="text-white font-extrabold text-2xl mb-4">${item.item_name}</h4>
+                        <div class="flex flex-col gap-3">
+                            <div class="flex gap-2">
+                                <div class="px-3 py-1 bg-black rounded border border-stone-800 text-[10px] text-stone-500 font-black">QL: <span class="text-yellow-500">${item.base_ql || '??'}</span></div>
+                                <div class="px-3 py-1 bg-black rounded border border-stone-800 text-[10px] text-stone-500 font-black">STOCK: <span class="text-white">${item.quantity || '1'}</span></div>
+                            </div>
+                            <a href="merchant.html?id=${item.seller_id}" class="text-[10px] font-black uppercase italic text-stone-500 hover:text-yellow-500">Seller: <span class="text-stone-300 underline decoration-yellow-600/50">${prof.character_name}</span></a>
+                        </div>
+                    </div>
+                    <div class="mt-10 pt-6 border-t border-stone-900/50 flex justify-between items-center">
+                        <div><p class="text-[9px] font-black text-stone-700 uppercase mb-1 tracking-widest">Price</p><div class="text-2xl font-black italic tracking-tighter">${pHtml}</div></div>
+                        <a href="merchant.html?id=${item.seller_id}" class="p-4 bg-stone-900 hover:bg-yellow-600 text-stone-500 hover:text-black rounded-2xl transition-all border border-stone-800"><i data-lucide="shopping-bag" class="w-5 h-5"></i></a>
+                    </div>
+                </div>`;
+            }).join('');
             if (window.lucide) lucide.createIcons();
         }
         document.addEventListener('DOMContentLoaded', init);
