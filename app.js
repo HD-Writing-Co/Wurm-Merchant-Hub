@@ -1,92 +1,106 @@
 const { createClient } = supabase;
 const _url = 'https://gjftmhvteylhtlwcouwg.supabase.co';
-const _key = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdqZnRtaHZ0ZXlsaHRsd2NvdXdnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg5MTg5MDUsImV4cCI6MjA4NDQ5NDkwNX0.SBELcOhXZrm8fWHTaC1Ujjo-ZL7qUelFjxs7hmWGY5k';
+const _key = 'your_supabase_key';
 const client = createClient(_url, _key);
 
-let allProducts = []; // This stores everything for the filters to use
-
-async function checkUser() {
-    const { data: { user } } = await client.auth.getUser();
-    const navContainer = document.getElementById('nav-auth');
-    if (user && navContainer) {
-        navContainer.innerHTML = `
-            <a href="dashboard.html" class="block p-4 rounded-xl bg-stone-900 border border-stone-800 mb-8 mt-auto hover:border-yellow-700/50 transition-all">
-                <p class="text-[10px] text-stone-600 font-bold uppercase mb-2">Merchant Portal</p>
-                <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-full bg-yellow-900/20 border border-yellow-700/50 flex items-center justify-center">
-                        <i data-lucide="layout-dashboard" class="w-5 h-5 text-yellow-500"></i>
-                    </div>
-                    <div><div class="text-sm font-bold text-stone-200">Dashboard</div></div>
-                </div>
-            </a>`;
-        if (window.lucide) lucide.createIcons();
-    }
-}
+let allProducts = [];
 
 async function loadInventory() {
     const { data, error } = await client
         .from('products')
-        .select('*, profiles:seller_id (character_name, server_name)')
-        .order('created_at', { ascending: false });
+        .select('*, profiles:seller_id (character_name, server_name)');
 
     if (!error) {
-        allProducts = data; // Save the data here
-        renderGrid(data);   // Show everything first
+        allProducts = data;
+        updateMarketStats(data);
+        renderGrid(data);
     }
 }
 
-// THE FILTER FUNCTION
-window.filterByCategory = (category) => {
-    // If 'all', show everything. Otherwise, filter by the category name.
-    const filtered = category === 'all' 
-        ? allProducts 
-        : allProducts.filter(item => item.category === category);
+// Function to update the "Stats" in the header
+function updateMarketStats(products) {
+    const itemsEl = document.getElementById('stat-items');
+    const sellersEl = document.getElementById('stat-sellers');
+    if(itemsEl) itemsEl.innerText = products.length;
+    if(sellersEl) {
+        const uniqueSellers = [...new Set(products.map(p => p.seller_id))].length;
+        sellersEl.innerText = uniqueSellers;
+    }
+}
+
+// Global Filter (Search + Category + Server)
+window.runFilters = () => {
+    const search = document.getElementById('search-input').value.toLowerCase();
+    const server = document.getElementById('filter-server').value;
     
+    const filtered = allProducts.filter(item => {
+        const matchesSearch = item.item_name.toLowerCase().includes(search);
+        const matchesServer = server === 'all' || item.profiles?.server_name === server;
+        return matchesSearch && matchesServer;
+    });
+
     renderGrid(filtered);
+};
+
+// The "Copy Command" logic
+window.copyWurmCommand = (seller, item, price, server) => {
+    const command = `/tell ${seller} wtb ${item} for ${price} on ${server}`;
+    navigator.clipboard.writeText(command);
+    alert("Message copied! Paste it in Wurm chat.");
 };
 
 function renderGrid(products) {
     const grid = document.getElementById('inventory-grid');
     grid.innerHTML = ''; 
 
-    if (products.length === 0) {
-        grid.innerHTML = `<p class="col-span-full text-center py-20 text-stone-600 italic">No items found in this category.</p>`;
-        return;
-    }
-
     products.forEach(item => {
-        let priceParts = [];
-        if (item.price_g > 0) priceParts.push(`${item.price_g}g`);
-        if (item.price_s > 0) priceParts.push(`${item.price_s}s`);
-        if (item.price_c > 0) priceParts.push(`${item.price_c}c`);
-        if (item.price_i > 0) priceParts.push(`${item.price_i}i`);
-        const finalPrice = priceParts.length > 0 ? priceParts.join(' ') : "Offer";
-        
-        const qlDisplay = item.base_ql ? `${item.base_ql} QL` : "Bulk";
-        
-        // Stock Badge positioned below name to prevent overlap
-        const qtyBadge = item.quantity ? `<div class="mt-2 inline-block bg-stone-800 px-2 py-1 rounded text-[10px] font-bold text-stone-300 border border-stone-700 uppercase">Stock: ${item.quantity}</div>` : '';
+        const seller = item.profiles?.character_name || 'Unknown';
+        const server = item.profiles?.server_name || 'Cadence';
+        const price = `${item.price_g}g ${item.price_s}s ${item.price_c}c`;
 
         grid.innerHTML += `
-            <div onclick="window.location.href='merchant.html?id=${item.seller_id}'" class="wurm-card p-6 rounded-xl relative cursor-pointer border border-stone-800 bg-stone-900/40 hover:border-yellow-900/30 transition-all flex flex-col justify-between h-full">
-                <div class="relative z-10">
-                    <div class="flex justify-between items-start mb-3">
-                        <span class="text-[10px] uppercase text-yellow-600 font-bold tracking-widest">${item.category}</span>
-                        <span class="text-[9px] text-stone-500 font-bold uppercase bg-stone-950 px-2 py-0.5 rounded">${item.profiles?.server_name || 'Cadence'}</span>
+            <div class="wurm-card p-0 rounded-2xl border border-stone-800 bg-stone-900/40 overflow-hidden flex flex-col">
+                <div class="h-24 bg-stone-800/50 flex items-center justify-center relative border-b border-stone-800">
+                    <span class="absolute top-3 left-3 text-[9px] font-black uppercase tracking-tighter text-yellow-600 bg-black/50 px-2 py-0.5 rounded border border-yellow-900/30">${item.category}</span>
+                    <i data-lucide="package" class="w-8 h-8 text-stone-700"></i>
+                </div>
+
+                <div class="p-6">
+                    <div class="flex justify-between items-start mb-4">
+                        <h3 class="text-lg font-bold text-white">${item.item_name}</h3>
+                        <span class="text-[10px] text-stone-500 font-bold uppercase">${server}</span>
                     </div>
-                    <h3 class="text-xl font-semibold text-stone-200 leading-tight">${item.item_name}</h3>
-                    ${qtyBadge}
-                    <div class="mt-4 border-t border-white/5 pt-3">
-                        <span class="text-[10px] text-stone-400">Merchant: <span class="text-stone-200">${item.profiles?.character_name || 'Unknown'}</span></span>
+
+                    <div class="grid grid-cols-2 gap-4 mb-6">
+                        <div class="bg-black/30 p-2 rounded-lg border border-stone-800/50">
+                            <p class="text-[8px] uppercase text-stone-600 font-bold">In Stock</p>
+                            <p class="text-xs font-mono text-stone-300">${item.quantity || '∞'}</p>
+                        </div>
+                        <div class="bg-black/30 p-2 rounded-lg border border-stone-800/50">
+                            <p class="text-[8px] uppercase text-stone-600 font-bold">Min Order</p>
+                            <p class="text-xs font-mono text-stone-300">${item.min_order || 1}</p>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-between items-end border-t border-white/5 pt-4">
+                        <div>
+                            <p class="text-[9px] uppercase text-stone-600 font-bold mb-1">Price</p>
+                            <div class="text-xl font-black text-yellow-500">${price}</div>
+                        </div>
+                        <button onclick="copyWurmCommand('${seller}', '${item.item_name}', '${price}', '${server}')" 
+                                class="p-3 bg-stone-800 hover:bg-yellow-600 text-stone-500 hover:text-black rounded-xl transition-all shadow-lg">
+                            <i data-lucide="message-square" class="w-4 h-4"></i>
+                        </button>
                     </div>
                 </div>
-                <div class="mt-6 flex justify-between items-end">
-                    <div class="text-xl font-bold text-white tracking-tight">${finalPrice}</div>
-                    <div class="bg-black/60 px-3 py-1 rounded text-xs border border-yellow-900/50 text-yellow-500 font-mono font-bold">${qlDisplay}</div>
+
+                <div class="px-6 py-3 bg-black/20 border-t border-stone-800 flex justify-between items-center">
+                    <span class="text-[10px] text-stone-500 uppercase font-bold">Merchant: <span class="text-stone-300">${seller}</span></span>
+                    <div class="w-2 h-2 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.5)]"></div>
                 </div>
             </div>`;
     });
     if (window.lucide) lucide.createIcons();
 }
 
-document.addEventListener('DOMContentLoaded', () => { checkUser(); loadInventory(); });
+document.addEventListener('DOMContentLoaded', () => { loadInventory(); });
