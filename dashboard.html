@@ -16,6 +16,8 @@
         .gold-btn { background: #d4af37; color: black; font-weight: 800; padding: 0.75rem 1.5rem; border-radius: 0.75rem; transition: all 0.3s; cursor: pointer; }
         .gold-btn:hover { background: #f4cf67; transform: translateY(-2px); }
         .edit-mode { border-color: #3b82f6 !important; box-shadow: 0 0 15px rgba(59, 130, 246, 0.2); }
+        .message-pill { background: #1a1a1a; border-left: 4px solid #d4af37; transition: all 0.2s; }
+        .message-pill:hover { background: #222; }
     </style>
 </head>
 <body class="flex min-h-screen">
@@ -60,6 +62,16 @@
                     </div>
                 </div>
             </section>
+
+            <section class="mb-10 dashboard-card">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-lg font-black text-white uppercase italic">Customer Inquiries</h3>
+                    <span id="msg-count" class="bg-yellow-600 text-black text-[10px] font-black px-2 py-0.5 rounded-full">0 New</span>
+                </div>
+                <div id="message-container" class="space-y-4 max-h-64 overflow-y-auto pr-2">
+                    <p class="text-stone-600 italic text-sm">Checking for new messages...</p>
+                </div>
+            </section>
             
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-10">
                 <div class="lg:col-span-1">
@@ -90,27 +102,21 @@
                             <div>
                                 <label class="text-[10px] font-black text-stone-600 uppercase mb-2 block">Category</label>
                                 <select id="category" class="input-field">
-                                    <optgroup label="Crafting">
-                                        <option value="Carpentry">Carpentry</option>
-                                        <option value="Smithing">Smithing</option>
-                                        <option value="Masonry">Masonry</option>
-                                        <option value="Tailoring">Tailoring</option>
-                                        <option value="Leatherworking">Leatherworking</option>
-                                        <option value="Jewelry">Jewelry</option>
-                                        <option value="Pottery">Pottery</option>
-                                    </optgroup>
-                                    <optgroup label="Equipment">
-                                        <option value="Armor">Armor</option>
-                                        <option value="Weapons">Weapons</option>
-                                        <option value="Tools">Tools</option>
-                                        <option value="Shipbuilding">Ships / Marine</option>
-                                    </optgroup>
-                                    <optgroup label="Nature">
-                                        <option value="Animal Husbandry">Animal Husbandry</option>
-                                        <option value="Farming">Farming / Seeds</option>
-                                        <option value="Cooking">Cooking / Food</option>
-                                        <option value="Alchemy">Alchemy / Potions</option>
-                                    </optgroup>
+                                    <option value="Carpentry">Carpentry</option>
+                                    <option value="Smithing">Smithing</option>
+                                    <option value="Masonry">Masonry</option>
+                                    <option value="Tailoring">Tailoring</option>
+                                    <option value="Leatherworking">Leatherworking</option>
+                                    <option value="Jewelry">Jewelry</option>
+                                    <option value="Pottery">Pottery</option>
+                                    <option value="Armor">Armor</option>
+                                    <option value="Weapons">Weapons</option>
+                                    <option value="Tools">Tools</option>
+                                    <option value="Shipbuilding">Ships / Marine</option>
+                                    <option value="Animal Husbandry">Animal Husbandry</option>
+                                    <option value="Farming">Farming / Seeds</option>
+                                    <option value="Cooking">Cooking / Food</option>
+                                    <option value="Alchemy">Alchemy / Potions</option>
                                     <option value="Misc">Miscellaneous / Rifts</option>
                                 </select>
                             </div>
@@ -151,7 +157,6 @@
             const { data: { user } } = await client.auth.getUser();
             if (!user) { window.location.href = 'login.html'; return; }
             
-            // Load Profile Data
             const { data: profile } = await client.from('profiles').select('*').eq('id', user.id).single();
             if (profile) {
                 document.getElementById('prof_name').value = profile.character_name || "";
@@ -160,6 +165,36 @@
             }
             
             loadMyProducts(user.id);
+            loadMessages(user.id);
+        }
+
+        async function loadMessages(userId) {
+            // Assumes an 'inquiries' table exists with seller_id, sender_name, message, created_at
+            const { data, error } = await client
+                .from('inquiries')
+                .select('*')
+                .eq('seller_id', userId)
+                .order('created_at', { ascending: false });
+
+            const container = document.getElementById('message-container');
+            const countBadge = document.getElementById('msg-count');
+
+            if (error || !data || data.length === 0) {
+                container.innerHTML = `<p class="text-stone-700 italic text-sm">No new messages.</p>`;
+                countBadge.innerText = "0 New";
+                return;
+            }
+
+            countBadge.innerText = `${data.length} Total`;
+            container.innerHTML = data.map(msg => `
+                <div class="p-4 rounded-xl message-pill">
+                    <div class="flex justify-between items-start mb-1">
+                        <span class="text-xs font-bold text-yellow-600 uppercase tracking-tighter">${msg.sender_name}</span>
+                        <span class="text-[9px] text-stone-600 font-mono">${new Date(msg.created_at).toLocaleDateString()}</span>
+                    </div>
+                    <p class="text-stone-300 text-sm leading-relaxed">${msg.message}</p>
+                </div>
+            `).join('');
         }
 
         async function updateProfile() {
@@ -173,8 +208,8 @@
             };
 
             const { error } = await client.from('profiles').upsert(updates);
-            if (error) alert("Error updating profile: " + error.message);
-            else alert("Profile updated successfully!");
+            if (error) alert("Error: " + error.message);
+            else alert("Profile updated!");
         }
 
         async function loadMyProducts(userId) {
@@ -182,7 +217,7 @@
             const container = document.getElementById('my-listings');
             
             if (!data || data.length === 0) {
-                container.innerHTML = `<div class="p-12 text-center text-stone-700 italic border border-dashed border-stone-900 rounded-3xl">No listings yet. Add your first item!</div>`;
+                container.innerHTML = `<div class="p-12 text-center text-stone-700 italic border border-dashed border-stone-900 rounded-3xl">No listings yet.</div>`;
                 return;
             }
 
@@ -260,19 +295,11 @@
                 seller_id: user.id
             };
 
-            let error;
-            if (editId) {
-                ({ error } = await client.from('products').update(itemData).eq('id', editId));
-            } else {
-                ({ error } = await client.from('products').insert([itemData]));
-            }
-
-            if (!error) {
-                resetForm();
-                loadMyProducts(user.id);
-            } else {
-                alert("Error: " + error.message);
-            }
+            if (editId) await client.from('products').update(itemData).eq('id', editId);
+            else await client.from('products').insert([itemData]);
+            
+            resetForm();
+            loadMyProducts(user.id);
         };
 
         window.deleteProduct = async (id) => {
