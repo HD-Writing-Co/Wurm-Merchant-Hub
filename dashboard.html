@@ -35,6 +35,32 @@
     <main class="flex-1 p-10">
         <div class="max-w-6xl mx-auto">
             
+            <section class="mb-10 dashboard-card">
+                <h3 class="text-lg font-black text-white mb-6 uppercase italic">Merchant Profile Settings</h3>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div>
+                        <label class="text-[10px] font-black text-stone-600 uppercase mb-2 block">Character Name</label>
+                        <input type="text" id="prof_name" class="input-field" placeholder="Wurm Character Name">
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-black text-stone-600 uppercase mb-2 block">Home Server</label>
+                        <select id="prof_server" class="input-field">
+                            <option value="Cadence">Cadence</option>
+                            <option value="Harmony">Harmony</option>
+                            <option value="Melody">Melody</option>
+                            <option value="Pristine">Pristine</option>
+                        </select>
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="text-[10px] font-black text-stone-600 uppercase mb-2 block">Merchant Bio</label>
+                        <input type="text" id="prof_bio" class="input-field" placeholder="Tell customers about your shop...">
+                    </div>
+                    <div class="flex items-end">
+                        <button onclick="updateProfile()" class="gold-btn w-full">Update Profile</button>
+                    </div>
+                </div>
+            </section>
+            
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-10">
                 <div class="lg:col-span-1">
                     <div id="form-container" class="dashboard-card sticky top-10">
@@ -124,7 +150,31 @@
         async function init() {
             const { data: { user } } = await client.auth.getUser();
             if (!user) { window.location.href = 'login.html'; return; }
+            
+            // Load Profile Data
+            const { data: profile } = await client.from('profiles').select('*').eq('id', user.id).single();
+            if (profile) {
+                document.getElementById('prof_name').value = profile.character_name || "";
+                document.getElementById('prof_server').value = profile.server_name || "Cadence";
+                document.getElementById('prof_bio').value = profile.bio || "";
+            }
+            
             loadMyProducts(user.id);
+        }
+
+        async function updateProfile() {
+            const { data: { user } } = await client.auth.getUser();
+            const updates = {
+                id: user.id,
+                character_name: document.getElementById('prof_name').value,
+                server_name: document.getElementById('prof_server').value,
+                bio: document.getElementById('prof_bio').value,
+                updated_at: new Date()
+            };
+
+            const { error } = await client.from('profiles').upsert(updates);
+            if (error) alert("Error updating profile: " + error.message);
+            else alert("Profile updated successfully!");
         }
 
         async function loadMyProducts(userId) {
