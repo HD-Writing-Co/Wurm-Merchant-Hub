@@ -5,7 +5,10 @@ const client = createClient(_url, _key);
 
 let allProducts = [];
 
-// Category Image Mapper
+/**
+ * 1. IMAGE SYSTEM
+ * Maps categories to specific icons to prevent manual uploads
+ */
 function getCategoryImage(category) {
     const images = {
         'Carpentry': 'https://img.icons8.com/color/96/hammer.png',
@@ -17,15 +20,18 @@ function getCategoryImage(category) {
     return images[category] || 'https://img.icons8.com/color/96/box.png';
 }
 
+/**
+ * 2. DATA LOADING
+ */
 async function loadInventory() {
     const grid = document.getElementById('inventory-grid');
     
-    // We query 'products' and join 'profiles' using the seller_id column
+    // We join the 'profiles' table via 'seller_id' to get merchant names and status
     const { data, error } = await client
         .from('products')
         .select(`
             *,
-            profiles (
+            profiles:seller_id (
                 character_name,
                 server_name,
                 last_seen
@@ -34,43 +40,47 @@ async function loadInventory() {
     
     if (error) {
         console.error("Hub Connection Error:", error);
-        grid.innerHTML = `<div class="col-span-full text-center text-red-500 font-bold uppercase tracking-widest p-20 border border-red-900/20 rounded-xl bg-red-900/5">Connection Failed: ${error.message}</div>`;
+        grid.innerHTML = `<div class="col-span-full text-center text-red-500 py-20 uppercase font-bold">Connection Failed: ${error.message}</div>`;
         return;
     }
 
     if (data && data.length > 0) {
         allProducts = data;
         renderGrid(data);
+        updateMarketStats(data);
     } else {
         grid.innerHTML = `<div class="col-span-full py-20 text-center text-stone-600 italic">No active listings found in the Hub.</div>`;
     }
 }
 
+/**
+ * 3. RENDERING
+ */
 function renderGrid(products) {
     const grid = document.getElementById('inventory-grid');
     grid.innerHTML = products.map(item => {
-        // Price Formatting Logic
+        // Price Formatting
         let priceParts = [];
         if (item.price_g > 0) priceParts.push(`${item.price_g}g`);
         if (item.price_s > 0) priceParts.push(`${item.price_s}s`);
         if (item.price_c > 0) priceParts.push(`${item.price_c}c`);
         const finalPrice = priceParts.length > 0 ? priceParts.join(' ') : "Offer";
         
-        // Online Status (Green dot if active within 5 mins)
+        // Online Status Calculation (Green if active within 5 minutes)
         const lastSeen = item.profiles?.last_seen ? new Date(item.profiles.last_seen) : null;
         const isOnline = lastSeen && (new Date() - lastSeen) < 300000;
         const statusDot = isOnline ? 'bg-green-500 shadow-[0_0_8px_#22c55e]' : 'bg-stone-800';
 
         return `
             <div class="wurm-card overflow-hidden rounded-2xl border border-stone-800 bg-stone-900/40 flex flex-col relative">
-                <div class="h-24 bg-stone-800/20 flex items-center justify-center border-b border-stone-800/50 opacity-40">
+                <div class="h-24 bg-stone-800/10 flex items-center justify-center border-b border-stone-800/50 opacity-40">
                     <img src="${getCategoryImage(item.category)}" class="w-12 h-12 grayscale">
                 </div>
 
                 <div class="p-6">
                     <div class="flex justify-between items-start mb-4">
                         <span class="text-[9px] font-black uppercase text-yellow-600 tracking-widest">${item.category}</span>
-                        <span class="text-[9px] text-stone-500 uppercase font-bold">${item.profiles?.server_name || 'Unknown'}</span>
+                        <span class="text-[9px] text-stone-500 uppercase font-bold">${item.profiles?.server_name || 'Cadence'}</span>
                     </div>
                     
                     <h3 class="text-xl font-bold text-white mb-6 leading-tight">${item.item_name}</h3>
@@ -99,9 +109,9 @@ function renderGrid(products) {
 
                     <div class="mt-6 pt-4 border-t border-white/5 flex justify-between items-center">
                         <a href="merchant.html?id=${item.seller_id}" class="text-[10px] text-stone-500 font-bold uppercase hover:text-white transition-colors underline decoration-stone-800 underline-offset-4">
-                            Merchant: ${item.profiles?.character_name || 'View Profile'}
+                            Merchant: ${item.profiles?.character_name || 'Anonymous'}
                         </a>
-                        <div class="w-2.5 h-2.5 rounded-full ${statusDot}"></div>
+                        <div class="w-2.5 h-2.5 rounded-full ${statusDot}" title="${isOnline ? 'Online' : 'Offline'}"></div>
                     </div>
                 </div>
             </div>`;
@@ -110,9 +120,35 @@ function renderGrid(products) {
     if (window.lucide) lucide.createIcons();
 }
 
+/**
+ * 4. UTILITIES & STATS
+ */
+function updateMarketStats(products) {
+    // Updates "Servers" count dynamically based on active listings
+    const serverStat = document.getElementById('stat-servers');
+    if (serverStat) {
+        const uniqueServers = [...new Set(products.map(p => p.profiles?.server_name).filter(Boolean))].length;
+        serverStat.innerText = uniqueServers;
+    }
+}
+
 window.copyWurmCommand = (seller, item, price, server) => {
     const cmd = `/tell ${seller} wtb ${item} for ${price} on ${server}`;
-    navigator.clipboard.writeText(cmd).then(() => alert("Command copied!"));
+    navigator.clipboard.writeText(cmd).then(() => alert("Command copied! Paste into Wurm chat."));
 };
 
+// Search Filter
+document.getElementById('search-bar')?.addEventListener('input', (e) => {
+    const term = e.target.value.toLowerCase();
+    const filtered = allProducts.filter(p => p.item_name.toLowerCase().includes(term));
+    renderGrid(filtered);
+});
+
+// Category Filter
+window.filterCategory = (cat) => {
+    if (cat === 'All') renderGrid(allProducts);
+    else renderGrid(allProducts.filter(p => p.category === cat));
+};
+
+// Start
 document.addEventListener('DOMContentLoaded', loadInventory);
