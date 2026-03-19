@@ -1,80 +1,75 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Merchant Page | Wurm Hub</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
-        body { background-color: #0f0f0f; color: #e5d5b5; font-family: 'Inter', sans-serif; }
-        .wurm-card { background: linear-gradient(145deg, #2a2a2a, #1a1a1a); border: 1px solid rgba(212, 175, 55, 0.1); }
-    </style>
-</head>
-<body class="p-8">
-    <div class="max-w-6xl mx-auto">
-        <a href="index.html" class="text-xs text-stone-500 hover:text-yellow-500 transition-colors">← Back to Hub</a>
-        
-        <header id="merchant-header" class="mt-10 mb-16 border-b border-stone-800 pb-10">
-            <h1 id="merchant-name" class="text-5xl font-black text-white italic uppercase tracking-tighter">Loading...</h1>
-            <p id="merchant-server" class="text-yellow-600 font-bold uppercase tracking-widest text-sm mt-2"></p>
-            <p id="merchant-bio" class="mt-4 text-stone-400 max-w-2xl"></p>
-        </header>
+const { createClient } = supabase;
+const _url = 'https://gjftmhvteylhtlwcouwg.supabase.co';
+const _key = 'YOUR_SUPABASE_KEY'; // Ensure this matches your app.js key
+const client = createClient(_url, _key);
 
-        <h2 class="text-xl font-bold text-white mb-6 uppercase tracking-widest">Active Stock</h2>
-        <div id="merchant-inventory" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
-    </div>
+async function loadMerchantData() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const sellerId = urlParams.get('id');
 
-    <script>
-        const { createClient } = supabase;
-        const _url = 'https://gjftmhvteylhtlwcouwg.supabase.co';
-        const _key = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdqZnRtaHZ0ZXlsaHRsd2NvdXdnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg5MTg5MDUsImV4cCI6MjA4NDQ5NDkwNX0.SBELcOhXZrm8fWHTaC1Ujjo-ZL7qUelFjxs7hmWGY5k';
-        const client = createClient(_url, _key);
+    if (!sellerId) {
+        window.location.href = 'index.html';
+        return;
+    }
 
-        async function loadMerchantPage() {
-            const urlParams = new URLSearchParams(window.location.search);
-            const merchantId = urlParams.get('id');
-            if (!merchantId) return;
+    // 1. Fetch Merchant Profile
+    const { data: profile } = await client.from('profiles').select('*').eq('id', sellerId).single();
+    if (profile) {
+        document.getElementById('merchant-name').innerText = profile.character_name || 'Unknown Merchant';
+        document.getElementById('merchant-server').innerText = profile.server_name || 'All Servers';
+        document.getElementById('merchant-bio').innerText = profile.bio || 'This merchant has not set a shop bio yet.';
+    }
 
-            // 1. Fetch Merchant Profile
-            const { data: profile } = await client.from('profiles').select('*').eq('id', merchantId).single();
-            if (profile) {
-                document.getElementById('merchant-name').innerText = profile.character_name || "Unknown Merchant";
-                document.getElementById('merchant-server').innerText = profile.server_name || "";
-                document.getElementById('merchant-bio').innerText = profile.bio || "No merchant biography provided.";
-                document.title = `${profile.character_name}'s Catalog | Wurm Hub`;
-            }
+    // 2. Fetch Merchant Products
+    const { data: products } = await client.from('products').select('*').eq('seller_id', sellerId);
+    if (products) {
+        renderMerchantGrid(products, profile?.character_name, profile?.server_name);
+        updateMerchantStats(products);
+    }
+}
 
-            // 2. Fetch Merchant Products
-            const { data: products } = await client.from('products').select('*').eq('seller_id', merchantId);
-            const grid = document.getElementById('merchant-inventory');
-            
-            if (products && products.length > 0) {
-                grid.innerHTML = products.map(item => {
-                    let priceParts = [];
-                    if (item.price_g > 0) priceParts.push(`${item.price_g}g`);
-                    if (item.price_s > 0) priceParts.push(`${item.price_s}s`);
-                    if (item.price_c > 0) priceParts.push(`${item.price_c}c`);
-                    if (item.price_i > 0) priceParts.push(`${item.price_i}i`);
-                    const priceLabel = priceParts.length > 0 ? priceParts.join(' ') : "Offer";
+function updateMerchantStats(products) {
+    document.getElementById('stat-count').innerText = products.length;
+    const avgQl = products.reduce((acc, p) => acc + (p.base_ql || 0), 0) / products.length;
+    document.getElementById('stat-ql').innerText = Math.round(avgQl) || 'Bulk';
+}
 
-                    return `
-                        <div class="wurm-card p-6 rounded-xl border border-stone-800 bg-stone-900/40">
-                            <span class="text-[10px] uppercase text-yellow-600 font-bold">${item.category}</span>
-                            <h3 class="text-xl font-semibold text-stone-200 mt-1">${item.item_name}</h3>
-                            <div class="mt-8 flex justify-between items-end">
-                                <div class="text-xl font-bold text-white">${priceLabel}</div>
-                                <div class="bg-black/60 px-3 py-1 rounded text-xs border border-yellow-900/50 text-yellow-500">${item.base_ql} QL</div>
-                            </div>
-                        </div>`;
-                }).join('');
-            } else {
-                grid.innerHTML = "<p class='text-stone-600 italic'>This merchant has no items in stock.</p>";
-            }
-        }
-        loadMerchantPage();
-    </script>
-</body>
-</html>
+function renderMerchantGrid(products, sellerName, serverName) {
+    const grid = document.getElementById('merchant-grid');
+    grid.innerHTML = products.map(item => {
+        let price = `${item.price_g}g ${item.price_s}s ${item.price_c}c`;
+        return `
+            <div class="wurm-card overflow-hidden rounded-2xl p-6 bg-stone-900/40">
+                <div class="flex justify-between items-start mb-6">
+                    <div>
+                        <span class="text-[9px] font-black uppercase text-yellow-600 tracking-widest">${item.category}</span>
+                        <h3 class="text-xl font-bold text-white">${item.item_name}</h3>
+                    </div>
+                    <button onclick="copyWurmCommand('${sellerName}', '${item.item_name}', '${price}', '${serverName}')" 
+                            class="p-3 bg-stone-800 hover:bg-yellow-600 text-stone-500 hover:text-black rounded-xl transition-all">
+                        <i data-lucide="message-square" class="w-4 h-4"></i>
+                    </button>
+                </div>
+                <div class="flex gap-4 mb-6">
+                    <div class="bg-black/30 p-2 rounded-lg border border-stone-800/50 flex-1">
+                        <p class="text-[8px] uppercase text-stone-600 font-bold">Stock</p>
+                        <p class="text-xs font-mono text-stone-300">${item.quantity || '∞'}</p>
+                    </div>
+                    <div class="bg-black/30 p-2 rounded-lg border border-stone-800/50 flex-1">
+                        <p class="text-[8px] uppercase text-stone-600 font-bold">Quality</p>
+                        <p class="text-xs font-mono text-stone-300">${item.base_ql || 'Bulk'}</p>
+                    </div>
+                </div>
+                <div class="text-2xl font-black text-white border-t border-white/5 pt-4">${price}</div>
+            </div>`;
+    }).join('');
+    if (window.lucide) lucide.createIcons();
+}
+
+window.copyWurmCommand = (seller, item, price, server) => {
+    const command = `/tell ${seller} wtb ${item} for ${price} on ${server}`;
+    navigator.clipboard.writeText(command);
+    alert("Message copied! Paste it in Wurm chat.");
+};
+
+loadMerchantData();
