@@ -31,6 +31,8 @@
 
     <main class="flex-1 p-12 bg-[#0f0f0f]">
         <div class="max-w-5xl mx-auto">
+            <div id="error-display" class="hidden mb-6 p-4 bg-red-900/20 border border-red-900/50 text-red-500 rounded-xl text-xs uppercase font-bold"></div>
+            
             <div class="mb-12">
                 <div class="inline-block bg-stone-900/30 p-6 rounded-2xl border border-stone-800 min-w-[200px]">
                     <p class="text-[10px] font-bold text-stone-600 uppercase mb-1">Active Listings</p>
@@ -53,21 +55,31 @@
             const urlParams = new URLSearchParams(window.location.search);
             const sellerId = urlParams.get('id');
 
-            if (!sellerId) return;
+            if (!sellerId) {
+                const errBox = document.getElementById('error-display');
+                errBox.innerText = "Error: No Merchant ID found in URL.";
+                errBox.classList.remove('hidden');
+                document.getElementById('merchant-name').innerText = "Not Found";
+                return;
+            }
 
             // Fetch Profile
-            const { data: profile } = await client.from('profiles').select('*').eq('id', sellerId).single();
+            const { data: profile, error: pErr } = await client.from('profiles').select('*').eq('id', sellerId).single();
+            if (pErr) console.error("Profile Error:", pErr);
+            
             if (profile) {
                 document.getElementById('merchant-name').innerText = profile.character_name || 'Merchant';
                 document.getElementById('merchant-server').innerText = profile.server_name || 'Cadence';
                 document.getElementById('merchant-bio').innerText = profile.bio || 'No shop description provided.';
             }
 
-            // Fetch Products: Query by seller_id for consistency
-            const { data: products } = await client.from('products').select('*').eq('seller_id', sellerId);
+            // Fetch Products
+            const { data: products, error: prErr } = await client.from('products').select('*').eq('seller_id', sellerId);
+            if (prErr) console.error("Products Error:", prErr);
+
             if (products) {
                 document.getElementById('stat-count').innerText = products.length;
-                renderMerchantGrid(products, profile?.character_name, profile?.server_name);
+                renderMerchantGrid(products, profile?.character_name || 'Merchant', profile?.server_name || 'Cadence');
             }
         }
 
@@ -78,6 +90,7 @@
                 return;
             }
 
+            // FIXED: Removed backslashes from ${item...} variables
             grid.innerHTML = products.map(item => {
                 let priceParts = [];
                 if (item.price_g > 0) priceParts.push(`${item.price_g}g`);
@@ -118,7 +131,8 @@
         }
 
         window.copyWurmCommand = (seller, item, price, server) => {
-            navigator.clipboard.writeText(\`/tell \${seller} wtb \${item} for \${price} on \${server}\`);
+            const cmd = `/tell ${seller} wtb ${item} for ${price} on ${server}`;
+            navigator.clipboard.writeText(cmd);
             alert("Command copied! Paste into Wurm chat.");
         };
 
