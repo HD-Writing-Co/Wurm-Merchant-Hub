@@ -3,67 +3,91 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Merchant Shop | Wurm Hub</title>
+    <title>Merchant Profile | Wurm Hub</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
         body { background-color: #0b0b0b; color: #e5d5b5; font-family: 'Inter', sans-serif; }
-        .shop-card { background: #141414; border: 1px solid #222; border-radius: 1.5rem; padding: 2rem; }
-        .input-field { background: #0f0f0f; border: 1px solid #222; color: white; padding: 0.75rem; border-radius: 0.75rem; width: 100%; outline: none; }
-        .status-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; margin-right: 8px; }
+        
+        /* 3D Product Card Styles - Matching Index */
+        .market-card { 
+            background: linear-gradient(180deg, #161616 0%, #0c0c0c 100%);
+            border: 2px solid #222; 
+            border-radius: 2rem; 
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+        }
+        
+        /* 3D Luminous Borders */
+        .ql-common { border-color: #d4af37; box-shadow: inset 0 0 15px rgba(212, 175, 55, 0.15); }
+        .ql-rare { border-color: #3b82f6; box-shadow: inset 0 0 15px rgba(59, 130, 246, 0.2); }
+        .ql-supreme { border-color: #0ea5e9; box-shadow: inset 0 0 15px rgba(14, 165, 233, 0.2); }
+        .ql-fantastic { border-color: #ec4899; box-shadow: inset 0 0 20px rgba(236, 72, 153, 0.25); }
+
+        .icon-header { 
+            background: #1a1a1a; border-radius: 1rem; display: flex; align-items: center; 
+            justify-content: center; width: 54px; height: 54px; border: 1px solid rgba(255,255,255,0.05);
+            margin-top: -27px; margin-bottom: 20px; box-shadow: 0 10px 20px rgba(0,0,0,0.4);
+        }
+
+        /* Inquiry Button Styling */
+        .inquiry-btn {
+            position: absolute; bottom: 20px; right: 20px;
+            background: #1a1a1a; border: 1px solid #333; color: #888;
+            width: 40px; height: 40px; border-radius: 12px;
+            display: flex; align-items: center; justify-content: center;
+            transition: all 0.3s;
+        }
+        .inquiry-btn:hover { background: white; color: black; border-color: white; transform: scale(1.1); }
+
+        /* Modal Blur */
+        #inquiry-modal { backdrop-filter: blur(8px); background: rgba(0,0,0,0.8); }
     </style>
 </head>
-<body class="p-10 md:p-20">
-    <div class="max-w-5xl mx-auto">
-        <a href="index.html" class="text-3xl font-black italic text-white mb-16 uppercase tracking-tighter inline-block hover:opacity-80 transition-all">
-            WURM <span class="text-yellow-600">HUB</span>
-        </a>
+<body class="flex min-h-screen">
 
-        <div id="profile-header" class="mb-12 border-l-4 border-yellow-600 pl-8">
-            <h1 id="m_name" class="text-5xl font-black italic text-white uppercase tracking-tighter">Merchant</h1>
-            <div class="flex items-center mt-2">
-                <div id="status-ticker" class="text-[10px] font-bold uppercase tracking-widest text-stone-500 flex items-center mr-4">
-                    <span class="status-dot bg-stone-700"></span> Checking Status
-                </div>
-                <p id="m_server" class="text-yellow-600 font-bold uppercase tracking-widest text-sm"></p>
-            </div>
-            <p id="m_bio" class="text-stone-400 mt-6 max-w-2xl leading-relaxed italic">Loading bio...</p>
+    <aside class="w-72 bg-[#0f0f0f] border-r border-stone-900 p-8 flex flex-col h-screen sticky top-0">
+        <h1 class="text-2xl font-black italic text-white mb-10 uppercase tracking-tighter">WURM <span class="text-yellow-600">HUB</span></h1>
+        <nav class="space-y-4">
+            <a href="index.html" class="flex items-center gap-3 text-stone-500 hover:text-white transition-all font-bold uppercase text-[10px] tracking-widest">
+                <i data-lucide="shopping-bag" class="w-4 h-4"></i> Browse Market
+            </a>
+            <a href="dashboard.html" class="flex items-center gap-3 text-stone-500 hover:text-white transition-all font-bold uppercase text-[10px] tracking-widest">
+                <i data-lucide="layout-dashboard" class="w-4 h-4"></i> Merchant Portal
+            </a>
+        </nav>
+        
+        <div class="mt-auto pt-10 border-t border-stone-900">
+            <h2 id="merchant-name" class="text-white font-black uppercase text-xl mb-1">Loading...</h2>
+            <p id="merchant-server" class="text-yellow-600 text-[10px] font-black uppercase tracking-widest mb-4"></p>
+            <p id="merchant-bio" class="text-stone-500 text-xs leading-relaxed italic"></p>
         </div>
+    </aside>
 
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-12">
-            <div class="md:col-span-2 space-y-4">
-                <h3 class="text-lg font-black text-white uppercase italic mb-6">Current Stock</h3>
-                <div id="product-list" class="space-y-3"></div>
-            </div>
-
-            <div class="md:col-span-1">
-                <div class="shop-card sticky top-10">
-                    <h3 class="text-lg font-black text-white mb-6 uppercase italic">Send Inquiry</h3>
-                    <div class="space-y-4">
-                        <div>
-                            <label class="text-[10px] font-black text-stone-600 uppercase mb-1 block">In-Game Name</label>
-                            <input type="text" id="buyer_name" class="input-field" placeholder="Character Name">
-                        </div>
-                        <div class="grid grid-cols-2 gap-2">
-                            <div>
-                                <label class="text-[10px] font-black text-stone-600 uppercase mb-1 block">Timezone</label>
-                                <input type="text" id="buyer_tz" class="input-field" placeholder="EST/UTC">
-                            </div>
-                            <div>
-                                <label class="text-[10px] font-black text-stone-600 uppercase mb-1 block">Best Time</label>
-                                <input type="text" id="buyer_time" class="input-field" placeholder="Evens/8pm">
-                            </div>
-                        </div>
-                        <div>
-                            <label class="text-[10px] font-black text-stone-600 uppercase mb-1 block">Message</label>
-                            <textarea id="buyer_message" class="input-field h-32" maxlength="255" placeholder="Include item name and details..."></textarea>
-                            <p id="char-count" class="text-[9px] text-stone-700 italic mt-1 text-right">0/255</p>
-                        </div>
-                    </div>
-                    <button onclick="sendMessage()" class="w-full bg-yellow-600 text-black font-black p-4 mt-4 rounded-xl hover:bg-yellow-500 transition-all uppercase tracking-widest text-[10px]">Send Message</button>
+    <main class="flex-1 p-16">
+        <div class="max-w-7xl mx-auto">
+            <div id="merchant-inventory" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-y-16 gap-x-8">
                 </div>
+        </div>
+    </main>
+
+    <div id="inquiry-modal" class="fixed inset-0 hidden flex items-center justify-center z-50 p-6">
+        <div class="bg-[#111] border border-stone-800 p-8 rounded-3xl max-w-md w-full shadow-2xl">
+            <h2 id="modal-title" class="text-white font-black uppercase text-xl mb-2">Inquiry</h2>
+            <p id="modal-item-name" class="text-stone-500 text-[10px] font-bold uppercase tracking-widest mb-6"></p>
+            
+            <input type="text" id="sender-name" placeholder="Your Character Name" class="w-full bg-stone-900 border border-stone-800 rounded-xl p-3 text-sm text-white mb-4 outline-none focus:border-yellow-600">
+            <textarea id="message-body" rows="4" placeholder="Your message or offer..." class="w-full bg-stone-900 border border-stone-800 rounded-xl p-3 text-sm text-white mb-6 outline-none focus:border-yellow-600"></textarea>
+            
+            <div class="flex gap-4">
+                <button onclick="closeInquiry()" class="flex-1 px-6 py-3 rounded-xl bg-stone-900 text-stone-500 text-[10px] font-black uppercase hover:text-white transition-all">Cancel</button>
+                <button onclick="sendInquiry()" class="flex-1 px-6 py-3 rounded-xl bg-yellow-600 text-black text-[10px] font-black uppercase hover:bg-white transition-all">Send Inquiry</button>
             </div>
         </div>
     </div>
@@ -71,77 +95,97 @@
     <script>
         const { createClient } = supabase;
         const client = createClient('https://gjftmhvteylhtlwcouwg.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdqZnRtaHZ0ZXlsaHRsd2NvdXdnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg5MTg5MDUsImV4cCI6MjA4NDQ5NDkwNX0.SBELcOhXZrm8fWHTaC1Ujjo-ZL7qUelFjxs7hmWGY5k');
-        
+
         const params = new URLSearchParams(window.location.search);
-        const merchantId = params.get('id') || params.get('merchant'); 
+        const merchantId = params.get('id');
+        let activeItem = null;
 
         async function init() {
-            if (!merchantId) return;
-
-            const { data: prof } = await client.from('profiles').select('*').eq('id', merchantId).single();
-            if (prof) {
-                document.getElementById('m_name').innerText = prof.character_name || "Merchant";
-                document.getElementById('m_server').innerText = prof.server_name || "";
-                document.getElementById('m_bio').innerText = prof.bio || "No bio available.";
-
-                // Online Status Pulse Logic
-                const lastSeen = new Date(prof.updated_at);
-                const isOnline = (new Date() - lastSeen) < 300000; 
-                document.getElementById('status-ticker').innerHTML = isOnline ? 
-                    `<span class="status-dot bg-green-500 shadow-[0_0_8px_#22c55e]"></span> Online` : 
-                    `<span class="status-dot bg-red-600"></span> Offline`;
-            }
-
-            const { data: items } = await client.from('products').select('*').eq('seller_id', merchantId);
-            const container = document.getElementById('product-list');
+            if (!merchantId) { window.location.href = 'index.html'; return; }
             
-            if (items) {
-                container.innerHTML = items.map(item => `
-                    <div class="p-6 bg-[#111] border border-stone-900 rounded-2xl flex justify-between items-center">
-                        <div>
-                            <p class="text-white font-bold uppercase">${item.item_name}</p>
-                            <p class="text-[10px] text-stone-600 font-bold uppercase tracking-widest">QL ${item.base_ql} • Qty: ${item.quantity}</p>
-                        </div>
-                        <div class="flex items-center gap-6">
-                            <div class="font-mono text-xs text-yellow-500">
-                                ${item.price_g}g ${item.price_s}s ${item.price_c}c
-                            </div>
-                            <button onclick="focusMessage('${item.item_name}')" class="text-stone-700 hover:text-yellow-600 transition-colors">
-                                <i data-lucide="mail" class="w-5 h-5"></i>
-                            </button>
-                        </div>
-                    </div>`).join('');
+            // Load Profile
+            const { data: profile } = await client.from('profiles').select('*').eq('id', merchantId).single();
+            if (profile) {
+                document.getElementById('merchant-name').innerText = profile.character_name;
+                document.getElementById('merchant-server').innerText = profile.server_name;
+                document.getElementById('merchant-bio').innerText = profile.bio || "No description provided.";
             }
+
+            // Load Items
+            const { data: items } = await client.from('products').select('*').eq('seller_id', merchantId);
+            renderInventory(items || []);
+        }
+
+        function getIcon(cat) {
+            const map = { 'Tools': 'hammer', 'Armor': 'shield', 'Weapons': 'swords', 'Resources': 'box', 'Bred Animals': 'dog' };
+            return map[cat] || 'package';
+        }
+
+        function renderInventory(items) {
+            const container = document.getElementById('merchant-inventory');
+            container.innerHTML = items.map(item => {
+                let qlClass = "ql-common";
+                let qlColor = "text-[#d4af37]";
+                if (item.base_ql >= 90) { qlClass = "ql-fantastic"; qlColor = "text-[#ec4899]"; }
+                else if (item.base_ql >= 70) { qlClass = "ql-supreme"; qlColor = "text-[#0ea5e9]"; }
+                else if (item.base_ql >= 50) { qlClass = "ql-rare"; qlColor = "text-[#3b82f6]"; }
+
+                const price = [
+                    item.price_g > 0 ? `<span class="text-yellow-500">${item.price_g}g</span>` : '',
+                    item.price_s > 0 ? `<span class="text-stone-300">${item.price_s}s</span>` : '',
+                    item.price_c > 0 ? `<span class="text-orange-600">${item.price_c}c</span>` : ''
+                ].filter(p => p !== "").join(' ');
+
+                return `
+                <div class="market-card p-8 ${qlClass}">
+                    <div class="icon-header ${qlColor}">
+                        <i data-lucide="${getIcon(item.category)}" class="w-6 h-6"></i>
+                    </div>
+                    <h3 class="text-white font-black uppercase text-xl mb-3 tracking-tight">${item.item_name}</h3>
+                    <p class="text-[11px] text-stone-300 font-extrabold uppercase tracking-[0.15em] mb-8">
+                        <span class="${qlColor}">QL ${item.base_ql}</span>
+                    </p>
+                    <div class="font-mono text-2xl font-black mb-4">
+                        ${price || '<span class="text-stone-800 text-sm italic">Taking Offers</span>'}
+                    </div>
+                    
+                    <button onclick="openInquiry('${item.item_name}', '${item.id}')" class="inquiry-btn">
+                        <i data-lucide="mail" class="w-4 h-4"></i>
+                    </button>
+                </div>
+            `}).join('');
             lucide.createIcons();
         }
 
-        window.focusMessage = (itemName) => {
-            document.getElementById('buyer_message').value = "Hi! I'm interested in: " + itemName + ". ";
-            document.getElementById('buyer_name').focus();
+        window.openInquiry = (itemName, itemId) => {
+            activeItem = { id: itemId, name: itemName };
+            document.getElementById('modal-item-name').innerText = `Regarding: ${itemName}`;
+            document.getElementById('inquiry-modal').classList.remove('hidden');
         };
 
-        document.getElementById('buyer_message').oninput = function() {
-            document.getElementById('char-count').innerText = this.value.length + "/255";
+        window.closeInquiry = () => {
+            document.getElementById('inquiry-modal').classList.add('hidden');
         };
 
-        window.sendMessage = async () => {
-            const charName = document.getElementById('buyer_name').value;
-            const tz = document.getElementById('buyer_tz').value;
-            const time = document.getElementById('buyer_time').value;
-            const msg = document.getElementById('buyer_message').value;
+        window.sendInquiry = async () => {
+            const sender = document.getElementById('sender-name').value;
+            const message = document.getElementById('message-body').value;
 
-            if (!charName || !msg) { alert("Name and Message required."); return; }
-
-            const fullMessage = `Name: ${charName}\nTZ: ${tz} | Best Catch: ${time}\n\n${msg}`;
+            if (!sender || !message) { alert("Please fill in both fields."); return; }
 
             const { error } = await client.from('inquiries').insert([{
                 seller_id: merchantId,
-                sender_name: charName,
-                message: fullMessage
+                product_id: activeItem.id,
+                sender_name: sender,
+                message: `[Item: ${activeItem.name}] - ${message}`
             }]);
 
-            if (error) alert(error.message);
-            else { alert("Inquiry sent!"); location.reload(); }
+            if (!error) {
+                alert("Inquiry sent to merchant!");
+                closeInquiry();
+            } else {
+                alert("Error sending inquiry: " + error.message);
+            }
         };
 
         init();
