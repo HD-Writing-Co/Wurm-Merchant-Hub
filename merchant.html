@@ -35,7 +35,15 @@
             <div class="md:col-span-1">
                 <div class="shop-card sticky top-10">
                     <h3 class="text-lg font-black text-white mb-6 uppercase italic">Send Inquiry</h3>
-                    <textarea id="msg_body" class="input-field h-32 mb-4" placeholder="I'm interested in buying..."></textarea>
+                    <div class="mb-4">
+                        <label class="text-[10px] font-black text-stone-600 uppercase mb-2 block">Your Message</label>
+                        <textarea id="buyer_message" 
+                                  class="input-field min-h-[120px]" 
+                                  placeholder="Hi! I'm interested in your item. Please include your character name and server here so the merchant can find you in-game!"></textarea>
+                        <p class="text-[9px] text-stone-700 italic mt-2">
+                            Note: Merchants need your in-game character name and server to complete the trade.
+                        </p>
+                    </div>
                     <button onclick="sendMessage()" class="w-full bg-yellow-600 text-black font-black p-4 rounded-xl hover:bg-yellow-500 transition-all uppercase tracking-widest text-[10px]">Send Message</button>
                 </div>
             </div>
@@ -46,13 +54,15 @@
         const { createClient } = supabase;
         const client = createClient('https://gjftmhvteylhtlwcouwg.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdqZnRtaHZ0ZXlsaHRsd2NvdXdnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg5MTg5MDUsImV4cCI6MjA4NDQ5NDkwNX0.SBELcOhXZrm8fWHTaC1Ujjo-ZL7qUelFjxs7hmWGY5k');
         
+        // --- FIXED URL PARAMETER LOGIC ---
         const params = new URLSearchParams(window.location.search);
-        const merchantId = params.get('merchant');
+        const merchantId = params.get('id') || params.get('merchant'); 
 
         async function init() {
             if (!merchantId) { 
                 console.error("No merchant ID provided");
-                document.getElementById('m_name').innerText = "Merchant Not Found";
+                document.getElementById('m_name').innerText = "MERCHANT NOT FOUND";
+                document.getElementById('m_bio').innerText = "Please use a link with a valid merchant ID.";
                 return; 
             }
 
@@ -78,7 +88,7 @@
                             <p class="text-[10px] text-stone-600 font-bold uppercase tracking-widest">QL ${item.base_ql} • Qty: ${item.quantity}</p>
                         </div>
                         <div class="font-mono text-xs text-yellow-500">
-                            ${item.price_g}g ${item.price_s}s ${item.price_c}c
+                            ${item.price_g > 0 ? item.price_g + 'g ' : ''}${item.price_s > 0 ? item.price_s + 's ' : ''}${item.price_c > 0 ? item.price_c + 'c ' : ''}${item.price_i > 0 ? item.price_i + 'i' : ''}
                         </div>
                     </div>`).join('');
             }
@@ -89,7 +99,7 @@
             const { data: { user } } = await client.auth.getUser();
             if (!user) { alert("Please sign in to contact merchants."); return; }
             
-            const msg = document.getElementById('msg_body').value;
+            const msg = document.getElementById('buyer_message').value;
             if (!msg) return;
 
             const { error } = await client.from('inquiries').insert([{
@@ -102,7 +112,7 @@
             if (error) alert(error.message);
             else { 
                 alert("Message sent successfully!"); 
-                document.getElementById('msg_body').value = ''; 
+                document.getElementById('buyer_message').value = ''; 
             }
         };
 
