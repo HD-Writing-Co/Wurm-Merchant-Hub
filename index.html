@@ -89,10 +89,8 @@
                     </div>
                 </div>
             `).join('');
-            lucide.createIcons();
         }
 
-        // Search Logic
         const filterItems = () => {
             const itemQuery = document.getElementById('search-item').value.toLowerCase();
             const sellerQuery = document.getElementById('search-seller').value.toLowerCase();
@@ -103,7 +101,7 @@
                 const matchItem = item.item_name.toLowerCase().includes(itemQuery);
                 const matchSeller = (item.profiles?.character_name || '').toLowerCase().includes(sellerQuery);
                 const matchCat = catQuery === "" || item.category === catQuery;
-                const matchServer = serverQuery === "" || item.profiles?.server_name === serverQuery;
+                const matchServer = serverQuery === "" || (item.profiles?.server_name || '') === serverQuery;
                 return matchItem && matchSeller && matchCat && matchServer;
             });
             renderMarket(filtered);
