@@ -10,7 +10,7 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
         body { background-color: #0b0b0b; color: #e5d5b5; font-family: 'Inter', sans-serif; }
-        .market-card { background: #141414; border: 1px solid #222; transition: all 0.3s; border-radius: 1.5rem; }
+        .market-card { background: #141414; border: 1px solid #222; transition: all 0.3s; }
         .market-card:hover { border-color: #d4af37; transform: translateY(-2px); }
     </style>
 </head>
@@ -21,14 +21,19 @@
         </a>
         <nav class="flex gap-8 items-center">
             <a href="dashboard.html" class="text-[10px] font-black uppercase tracking-widest text-stone-500 hover:text-yellow-600 transition-all">Merchant Portal</a>
-            <a href="login.html" class="bg-white text-black px-6 py-2 rounded-full text-[10px] font-black uppercase tracking-widest hover:bg-yellow-600 transition-all">Sign In</a>
+            <a href="login.html" id="auth-link" class="bg-white text-black px-6 py-2 rounded-full text-[10px] font-black uppercase tracking-widest hover:bg-yellow-600 transition-all">Sign In</a>
         </nav>
     </header>
 
     <main class="max-w-7xl mx-auto">
-        <div class="mb-12">
-            <h2 class="text-5xl font-black text-white uppercase italic tracking-tighter">The Market</h2>
-            <p class="text-stone-500 uppercase text-[10px] font-bold tracking-[0.2em] mt-2">Live Community Listings</p>
+        <div class="mb-12 flex justify-between items-end">
+            <div>
+                <h2 class="text-5xl font-black text-white uppercase italic tracking-tighter">The Market</h2>
+                <p class="text-stone-500 uppercase text-[10px] font-bold tracking-[0.2em] mt-2">Live Community Listings</p>
+            </div>
+            <div class="flex gap-4">
+                <input type="text" id="search" placeholder="Search items..." class="bg-[#111] border border-stone-800 rounded-xl px-4 py-2 text-sm outline-none focus:border-yellow-600 w-64">
+            </div>
         </div>
 
         <div id="market-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -40,33 +45,40 @@
         const client = createClient('https://gjftmhvteylhtlwcouwg.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdqZnRtaHZ0ZXlsaHRsd2NvdXdnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg5MTg5MDUsImV4cCI6MjA4NDQ5NDkwNX0.SBELcOhXZrm8fWHTaC1Ujjo-ZL7qUelFjxs7hmWGY5k');
 
         async function loadMarket() {
-            const { data: items, error } = await client.from('products').select(`*, profiles(character_name, server_name)`);
-            if (error) { console.error(error); return; }
-            
+            const { data: items } = await client.from('products').select(`*, profiles(character_name, server_name)`);
             const container = document.getElementById('market-grid');
+            
             container.innerHTML = items.map(item => `
-                <div class="market-card p-6">
+                <div class="market-card p-6 rounded-3xl">
                     <div class="flex justify-between items-start mb-4">
                         <div>
                             <h3 class="text-white font-black uppercase text-lg">${item.item_name}</h3>
-                            <p class="text-[10px] text-stone-600 font-bold uppercase tracking-widest">QL ${item.base_ql} • ${item.profiles?.server_name || 'Global'}</p>
+                            <p class="text-[10px] text-stone-600 font-bold uppercase tracking-widest">QL ${item.base_ql} • ${item.profiles?.server_name || 'Unknown'}</p>
                         </div>
-                        <div class="text-right font-mono text-xs text-yellow-500">
-                            ${item.price_g}g ${item.price_s}s ${item.price_c}c
+                        <div class="text-right font-mono text-xs">
+                            ${item.price_g > 0 ? `<span class="text-yellow-500">${item.price_g}g</span>` : ''}
+                            ${item.price_s > 0 ? `<span class="text-stone-300 ml-1">${item.price_s}s</span>` : ''}
+                            <div class="text-[10px] text-stone-600">Qty: ${item.quantity}</div>
                         </div>
                     </div>
-                    <div class="flex justify-between items-center mt-6">
+                    <hr class="border-stone-900 mb-4">
+                    <div class="flex justify-between items-center">
                         <a href="merchant.html?merchant=${item.seller_id}" class="flex items-center gap-2 group">
-                            <i data-lucide="store" class="w-4 h-4 text-stone-500 group-hover:text-yellow-600"></i>
-                            <span class="text-[10px] font-black uppercase text-stone-500 group-hover:text-white">${item.profiles?.character_name || 'Visit Shop'}</span>
+                            <div class="w-8 h-8 bg-stone-900 rounded-full flex items-center justify-center group-hover:bg-yellow-600 transition-all">
+                                <i data-lucide="store" class="w-4 h-4 text-stone-500 group-hover:text-black"></i>
+                            </div>
+                            <span class="text-[10px] font-black uppercase text-stone-500 group-hover:text-white transition-all">
+                                ${item.profiles?.character_name || 'Visit Shop'}
+                            </span>
                         </a>
-                        <a href="merchant.html?merchant=${item.seller_id}" class="text-[10px] font-black uppercase bg-stone-900 px-4 py-2 rounded-lg hover:bg-white hover:text-black transition-all">View Shop</a>
+                        <a href="merchant.html?merchant=${item.seller_id}" class="text-[10px] font-black uppercase bg-stone-900 px-4 py-2 rounded-lg hover:bg-white hover:text-black transition-all">View Details</a>
                     </div>
                 </div>
             `).join('');
             lucide.createIcons();
         }
-        loadMarket();
+
+        document.addEventListener('DOMContentLoaded', loadMarket);
     </script>
 </body>
 </html>
