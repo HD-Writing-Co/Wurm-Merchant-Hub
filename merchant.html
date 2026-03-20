@@ -10,41 +10,68 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
         body { background-color: #0b0b0b; color: #e5d5b5; font-family: 'Inter', sans-serif; }
-        .shop-card { background: #141414; border: 1px solid #222; border-radius: 1.5rem; padding: 2rem; }
-        .input-field { background: #0f0f0f; border: 1px solid #222; color: white; padding: 0.75rem; border-radius: 0.75rem; width: 100%; outline: none; }
+        .product-card { background: #111; border: 1px solid #222; border-radius: 1.25rem; transition: all 0.3s; }
+        .product-card:hover { border-color: #d4af37; background: #141414; }
+        .status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 6px; }
+        .modal { background: rgba(0,0,0,0.9); backdrop-filter: blur(4px); display: none; position: fixed; inset: 0; z-index: 50; align-items: center; justify-content: center; padding: 1rem; }
+        .input-field { background: #0f0f0f; border: 1px solid #333; color: white; padding: 0.75rem; border-radius: 0.75rem; width: 100%; outline: none; font-size: 0.875rem; }
     </style>
 </head>
-<body class="p-10 md:p-20">
+<body class="p-6 md:p-16">
     <div class="max-w-5xl mx-auto">
-        <a href="index.html" class="text-3xl font-black italic text-white mb-16 uppercase tracking-tighter inline-block hover:opacity-80 transition-all">
-            WURM <span class="text-yellow-600">HUB</span>
-        </a>
-
-        <div id="profile-header" class="mb-12 border-l-4 border-yellow-600 pl-8">
-            <h1 id="m_name" class="text-5xl font-black italic text-white uppercase tracking-tighter">Merchant</h1>
-            <p id="m_server" class="text-yellow-600 font-bold uppercase tracking-widest text-sm mt-2"></p>
-            <p id="m_bio" class="text-stone-400 mt-6 max-w-2xl leading-relaxed italic">Loading bio...</p>
-        </div>
-
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-12">
-            <div class="md:col-span-2 space-y-4">
-                <h3 class="text-lg font-black text-white uppercase italic mb-6">Current Stock</h3>
-                <div id="product-list" class="space-y-3"></div>
-            </div>
-
-            <div class="md:col-span-1">
-                <div class="shop-card sticky top-10">
-                    <h3 class="text-lg font-black text-white mb-6 uppercase italic">Send Inquiry</h3>
-                    <div class="mb-4">
-                        <label class="text-[10px] font-black text-stone-600 uppercase mb-2 block">Your Message</label>
-                        <textarea id="buyer_message" 
-                                  class="input-field min-h-[120px]" 
-                                  placeholder="Hi! I'm interested in your item. Please include your character name and server here so the merchant can find you in-game!"></textarea>
-                        <p class="text-[9px] text-stone-700 italic mt-2">
-                            Note: Merchants need your in-game character name and server to complete the trade.
-                        </p>
+        <header class="flex justify-between items-start mb-12">
+            <div>
+                <a href="index.html" class="text-2xl font-black italic text-white uppercase tracking-tighter hover:opacity-80 transition-all">
+                    WURM <span class="text-yellow-600">HUB</span>
+                </a>
+                <div class="mt-8">
+                    <h1 id="m_name" class="text-6xl font-black italic text-white uppercase tracking-tighter leading-none">Merchant</h1>
+                    <div class="flex items-center gap-4 mt-4">
+                        <span id="m_server" class="text-yellow-600 font-black uppercase tracking-widest text-xs px-3 py-1 border border-yellow-600/30 rounded-full">SERVER</span>
+                        <div id="status-ticker" class="flex items-center text-[10px] font-bold uppercase tracking-widest text-stone-500">
+                            <span class="status-dot bg-stone-700"></span> Checking Status
+                        </div>
                     </div>
-                    <button onclick="sendMessage()" class="w-full bg-yellow-600 text-black font-black p-4 rounded-xl hover:bg-yellow-500 transition-all uppercase tracking-widest text-[10px]">Send Message</button>
+                </div>
+            </div>
+        </header>
+
+        <section class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-16 p-8 bg-[#141414] border border-stone-900 rounded-3xl">
+            <div class="md:col-span-1">
+                <h4 class="text-[10px] font-black text-stone-600 uppercase mb-2 tracking-widest">About Merchant</h4>
+                <p id="m_bio" class="text-sm text-stone-400 italic leading-relaxed">Loading shop bio...</p>
+            </div>
+            <div class="md:col-span-2">
+                <h4 class="text-[10px] font-black text-stone-600 uppercase mb-2 tracking-widest">Merchant Expertise</h4>
+                <div id="skill-tags" class="flex flex-wrap gap-2 text-[11px] text-white font-mono">
+                    </div>
+            </div>
+        </section>
+
+        <h3 class="text-lg font-black text-white uppercase italic mb-8 flex items-center gap-3">
+            <i data-lucide="package" class="w-5 h-5 text-yellow-600"></i> Current Inventory
+        </h3>
+        <div id="product-list" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+    </div>
+
+    <div id="msg-modal" class="modal">
+        <div class="bg-[#141414] border border-stone-800 p-8 rounded-3xl max-w-md w-full">
+            <h3 class="text-xl font-black text-white uppercase italic mb-2">Send Inquiry</h3>
+            <p id="target-item" class="text-yellow-600 text-xs font-bold uppercase mb-6 tracking-widest">Item Name</p>
+            
+            <div class="space-y-4">
+                <input type="text" id="buyer_name" class="input-field" placeholder="In-game Character Name">
+                <div class="grid grid-cols-2 gap-4">
+                    <input type="text" id="buyer_tz" class="input-field" placeholder="Timezone (e.g. EST)">
+                    <input type="text" id="buyer_time" class="input-field" placeholder="Best time to catch you">
+                </div>
+                <div class="relative">
+                    <textarea id="buyer_msg" class="input-field h-32" maxlength="255" placeholder="Additional trade details..."></textarea>
+                    <span id="char-count" class="absolute bottom-2 right-3 text-[10px] text-stone-600">0/255</span>
+                </div>
+                <div class="flex gap-3 pt-2">
+                    <button onclick="closeModal()" class="flex-1 text-stone-500 font-bold uppercase text-[10px] hover:text-white transition-colors">Cancel</button>
+                    <button onclick="submitInquiry()" class="flex-[2] bg-yellow-600 text-black font-black py-3 rounded-xl uppercase text-xs tracking-widest hover:bg-yellow-500 transition-colors">Send Message</button>
                 </div>
             </div>
         </div>
@@ -54,66 +81,88 @@
         const { createClient } = supabase;
         const client = createClient('https://gjftmhvteylhtlwcouwg.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdqZnRtaHZ0ZXlsaHRsd2NvdXdnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg5MTg5MDUsImV4cCI6MjA4NDQ5NDkwNX0.SBELcOhXZrm8fWHTaC1Ujjo-ZL7qUelFjxs7hmWGY5k');
         
-        // --- FIXED URL PARAMETER LOGIC ---
         const params = new URLSearchParams(window.location.search);
-        const merchantId = params.get('id') || params.get('merchant'); 
+        const merchantId = params.get('id') || params.get('merchant');
+        let currentTargetItem = "";
 
         async function init() {
-            if (!merchantId) { 
-                console.error("No merchant ID provided");
-                document.getElementById('m_name').innerText = "MERCHANT NOT FOUND";
-                document.getElementById('m_bio').innerText = "Please use a link with a valid merchant ID.";
-                return; 
-            }
+            if (!merchantId) return;
 
-            // Load Profile
-            const { data: prof, error: profErr } = await client.from('profiles').select('*').eq('id', merchantId).single();
+            // Profile Data
+            const { data: prof } = await client.from('profiles').select('*').eq('id', merchantId).single();
             if (prof) {
-                document.getElementById('m_name').innerText = prof.character_name || "Unknown Merchant";
-                document.getElementById('m_server').innerText = prof.server_name || "";
-                document.getElementById('m_bio').innerText = prof.bio || "No bio available.";
+                document.getElementById('m_name').innerText = prof.character_name || "Merchant";
+                document.getElementById('m_server').innerText = prof.server_name || "Global";
+                document.getElementById('m_bio').innerText = prof.bio || "Welcome to my shop.";
+                
+                // Parse Skill Levels if found in bio (e.g., "Skill - Level | Skill - Level")
+                if (prof.bio && prof.bio.includes('-')) {
+                    const skills = prof.bio.split('|').filter(s => s.includes('-'));
+                    document.getElementById('skill-tags').innerHTML = skills.map(s => `<span class="bg-stone-900 border border-stone-800 px-3 py-1 rounded-md">${s.trim()}</span>`).join('');
+                }
+
+                // Seller Online Ticker Logic (5 min activity window)
+                const lastSeen = new Date(prof.updated_at);
+                const isOnline = (new Date() - lastSeen) < 300000; 
+                document.getElementById('status-ticker').innerHTML = isOnline ? 
+                    `<span class="status-dot bg-green-500 shadow-[0_0_8px_#22c55e]"></span> Online` : 
+                    `<span class="status-dot bg-red-600"></span> Offline`;
             }
 
-            // Load Products
+            // Inventory Loading
             const { data: items } = await client.from('products').select('*').eq('seller_id', merchantId);
             const container = document.getElementById('product-list');
             
             if (!items || items.length === 0) {
-                container.innerHTML = "<p class='text-stone-700 italic'>This merchant has no active listings.</p>";
+                container.innerHTML = "<p class='text-stone-700 italic'>No active inventory found.</p>";
             } else {
                 container.innerHTML = items.map(item => `
-                    <div class="p-6 bg-[#111] border border-stone-900 rounded-2xl flex justify-between items-center">
+                    <div class="product-card p-6 flex justify-between items-center">
                         <div>
-                            <p class="text-white font-bold uppercase">${item.item_name}</p>
-                            <p class="text-[10px] text-stone-600 font-bold uppercase tracking-widest">QL ${item.base_ql} • Qty: ${item.quantity}</p>
+                            <h4 class="text-white font-bold uppercase tracking-tight">${item.item_name}</h4>
+                            <p class="text-[10px] text-stone-600 font-bold uppercase mt-1">QL ${item.base_ql} • Qty: ${item.quantity || '1'}</p>
+                            <div class="text-yellow-600 font-mono text-sm mt-3">
+                                ${item.price_g}g ${item.price_s}s ${item.price_c}c
+                            </div>
                         </div>
-                        <div class="font-mono text-xs text-yellow-500">
-                            ${item.price_g > 0 ? item.price_g + 'g ' : ''}${item.price_s > 0 ? item.price_s + 's ' : ''}${item.price_c > 0 ? item.price_c + 'c ' : ''}${item.price_i > 0 ? item.price_i + 'i' : ''}
-                        </div>
+                        <button onclick="openModal('${item.item_name}')" class="w-12 h-12 rounded-full bg-stone-900 flex items-center justify-center text-stone-500 hover:text-yellow-600 hover:bg-stone-800 transition-all border border-stone-800">
+                            <i data-lucide="mail" class="w-5 h-5"></i>
+                        </button>
                     </div>`).join('');
             }
             lucide.createIcons();
         }
 
-        window.sendMessage = async () => {
-            const { data: { user } } = await client.auth.getUser();
-            if (!user) { alert("Please sign in to contact merchants."); return; }
-            
-            const msg = document.getElementById('buyer_message').value;
-            if (!msg) return;
+        window.openModal = (itemName) => {
+            currentTargetItem = itemName;
+            document.getElementById('target-item').innerText = itemName;
+            document.getElementById('msg-modal').style.display = 'flex';
+        };
+
+        window.closeModal = () => document.getElementById('msg-modal').style.display = 'none';
+
+        document.getElementById('buyer_msg').oninput = function() {
+            document.getElementById('char-count').innerText = `${this.value.length}/255`;
+        };
+
+        window.submitInquiry = async () => {
+            const charName = document.getElementById('buyer_name').value;
+            const msg = document.getElementById('buyer_msg').value;
+            const tz = document.getElementById('buyer_tz').value;
+            const time = document.getElementById('buyer_time').value;
+
+            if (!charName || !msg) { alert("Name and Message are required!"); return; }
+
+            const formattedMessage = `Item: ${currentTargetItem}\nTZ: ${tz} | Best Catch: ${time}\n\n${msg}`;
 
             const { error } = await client.from('inquiries').insert([{
                 seller_id: merchantId,
-                sender_id: user.id,
-                sender_name: "Interested Buyer",
-                message: msg
+                sender_name: charName,
+                message: formattedMessage
             }]);
 
-            if (error) alert(error.message);
-            else { 
-                alert("Message sent successfully!"); 
-                document.getElementById('buyer_message').value = ''; 
-            }
+            if (error) alert("Send failed: " + error.message);
+            else { alert("Inquiry sent to merchant!"); closeModal(); }
         };
 
         init();
