@@ -10,9 +10,18 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
         body { background-color: #0b0b0b; color: #e5d5b5; font-family: 'Inter', sans-serif; }
-        .market-card { background: #141414; border: 1px solid #222; transition: all 0.3s; border-radius: 1.5rem; }
-        .market-card:hover { border-color: #d4af37; transform: translateY(-2px); }
-        .search-input { background: #111; border: 1px solid #222; color: white; padding: 0.5rem 1rem; border-radius: 0.75rem; outline: none; font-size: 0.75rem; width: 100%; }
+        
+        /* Product Card Styles */
+        .market-card { background: #111; border: 1px solid #222; border-radius: 1.25rem; transition: all 0.3s; position: relative; overflow: hidden; }
+        .market-card:hover { transform: translateY(-3px); }
+        
+        /* Quality Based Borders */
+        .ql-common { border-color: #333; }
+        .ql-rare { border-color: #3b82f6; box-shadow: 0 0 10px rgba(59, 130, 246, 0.1); }
+        .ql-supreme { border-color: #a855f7; box-shadow: 0 0 10px rgba(168, 85, 247, 0.1); }
+        .ql-fantastic { border-color: #d4af37; box-shadow: 0 0 15px rgba(212, 175, 55, 0.2); }
+
+        .search-input { background: #111; border: 1px solid #222; color: white; padding: 0.6rem 1rem; border-radius: 0.75rem; outline: none; font-size: 0.75rem; width: 100%; }
         .search-input:focus { border-color: #d4af37; }
     </style>
 </head>
@@ -21,6 +30,9 @@
     <aside class="w-72 bg-[#0f0f0f] border-r border-stone-900 p-8 flex flex-col h-screen sticky top-0">
         <h1 class="text-2xl font-black italic text-white mb-10 uppercase tracking-tighter">WURM <span class="text-yellow-600">HUB</span></h1>
         <nav class="space-y-4">
+            <a href="index.html" class="flex items-center gap-3 text-white transition-all font-bold uppercase text-[10px] tracking-widest">
+                <i data-lucide="shopping-bag" class="w-4 h-4 text-yellow-600"></i> Browse Market
+            </a>
             <a href="dashboard.html" class="flex items-center gap-3 text-stone-500 hover:text-white transition-all font-bold uppercase text-[10px] tracking-widest">
                 <i data-lucide="layout-dashboard" class="w-4 h-4"></i> Merchant Portal
             </a>
@@ -33,7 +45,7 @@
     <main class="flex-1 p-10">
         <div class="max-w-7xl mx-auto">
             
-            <div class="mb-12 grid grid-cols-1 md:grid-cols-4 gap-4 bg-[#141414] p-6 rounded-2xl border border-stone-900">
+            <div class="mb-10 grid grid-cols-1 md:grid-cols-4 gap-4 bg-[#141414] p-6 rounded-2xl border border-stone-900">
                 <input type="text" id="search-item" class="search-input" placeholder="Search Product...">
                 <input type="text" id="search-seller" class="search-input" placeholder="Search Seller...">
                 <select id="search-category" class="search-input">
@@ -41,8 +53,7 @@
                     <option value="Tools">Tools</option>
                     <option value="Armor">Armor</option>
                     <option value="Weapons">Weapons</option>
-                    <option value="Carpentry">Carpentry</option>
-                    <option value="Smithing">Smithing</option>
+                    <option value="Resources">Resources</option>
                 </select>
                 <select id="search-server" class="search-input">
                     <option value="">All Servers</option>
@@ -66,59 +77,69 @@
 
         async function loadMarket() {
             const { data: items, error } = await client.from('products').select(`*, profiles(character_name, server_name)`);
-            if (error) { console.error(error); return; }
-            
+            if (error) return;
             allItems = items;
             renderMarket(allItems);
         }
 
         function renderMarket(items) {
             const container = document.getElementById('market-grid');
-            container.innerHTML = items.map(item => `
-                <div class="market-card p-6">
+            container.innerHTML = items.map(item => {
+                // Determine Border Class
+                let qlClass = "ql-common";
+                if (item.base_ql >= 90) qlClass = "ql-fantastic";
+                else if (item.base_ql >= 70) qlClass = "ql-supreme";
+                else if (item.base_ql >= 50) qlClass = "ql-rare";
+
+                // Format Price (Hide zeros)
+                const price = [
+                    item.price_g > 0 ? `<span class="text-yellow-500">${item.price_g}g</span>` : '',
+                    item.price_s > 0 ? `<span class="text-stone-300">${item.price_s}s</span>` : '',
+                    item.price_c > 0 ? `<span class="text-orange-600">${item.price_c}c</span>` : ''
+                ].filter(p => p !== "").join(' ');
+
+                return `
+                <div class="market-card p-6 ${qlClass}">
                     <div class="flex justify-between items-start mb-4">
                         <div>
-                            <h3 class="text-white font-black uppercase text-lg">${item.item_name}</h3>
-                            <p class="text-[10px] text-stone-600 font-bold uppercase tracking-widest">QL ${item.base_ql} • ${item.profiles?.server_name || 'Global'}</p>
+                            <h3 class="text-white font-black uppercase text-lg leading-tight">${item.item_name}</h3>
+                            <p class="text-[10px] text-stone-600 font-bold uppercase tracking-widest mt-1">
+                                QL ${item.base_ql} • ${item.profiles?.server_name || 'Global'}
+                            </p>
                         </div>
-                        <div class="text-right font-mono text-xs text-yellow-500">
-                            ${item.price_g}g ${item.price_s}s ${item.price_c}c
+                        <div class="text-right font-mono text-xs">
+                            ${price || '<span class="text-stone-700">Offer</span>'}
                         </div>
                     </div>
-                    <div class="flex justify-between items-center mt-6 pt-4 border-t border-stone-900/50">
-                        <a href="merchant.html?id=${item.seller_id}" class="flex items-center gap-2 group">
-                            <span class="text-[10px] font-black uppercase text-stone-500 group-hover:text-white transition-all">
-                                ${item.profiles?.character_name || 'Visit Shop'}
-                            </span>
+                    <div class="flex justify-between items-center mt-8 pt-4 border-t border-stone-900/50">
+                        <span class="text-[10px] font-black uppercase text-stone-500">
+                            ${item.profiles?.character_name || 'Unknown'}
+                        </span>
+                        <a href="merchant.html?id=${item.seller_id}" class="text-[9px] font-black uppercase bg-stone-900 px-4 py-2 rounded-lg hover:bg-white hover:text-black transition-all border border-stone-800">
+                            View Shop
                         </a>
-                        <a href="merchant.html?id=${item.seller_id}" class="text-[10px] font-black uppercase bg-stone-900 px-4 py-2 rounded-lg hover:bg-white hover:text-black transition-all">View Details</a>
                     </div>
                 </div>
-            `).join('');
+            `}).join('');
             lucide.createIcons();
         }
 
         const filterItems = () => {
-            const itemQuery = document.getElementById('search-item').value.toLowerCase();
-            const sellerQuery = document.getElementById('search-seller').value.toLowerCase();
-            const catQuery = document.getElementById('search-category').value;
-            const serverQuery = document.getElementById('search-server').value;
+            const iQ = document.getElementById('search-item').value.toLowerCase();
+            const sQ = document.getElementById('search-seller').value.toLowerCase();
+            const cQ = document.getElementById('search-category').value;
+            const svQ = document.getElementById('search-server').value;
 
             const filtered = allItems.filter(item => {
-                const matchItem = item.item_name.toLowerCase().includes(itemQuery);
-                const matchSeller = (item.profiles?.character_name || '').toLowerCase().includes(sellerQuery);
-                const matchCat = catQuery === "" || item.category === catQuery;
-                const matchServer = serverQuery === "" || (item.profiles?.server_name || '') === serverQuery;
-                return matchItem && matchSeller && matchCat && matchServer;
+                return item.item_name.toLowerCase().includes(iQ) &&
+                       (item.profiles?.character_name || '').toLowerCase().includes(sQ) &&
+                       (cQ === "" || item.category === cQ) &&
+                       (svQ === "" || item.profiles?.server_name === svQ);
             });
             renderMarket(filtered);
         };
 
-        document.getElementById('search-item').oninput = filterItems;
-        document.getElementById('search-seller').oninput = filterItems;
-        document.getElementById('search-category').onchange = filterItems;
-        document.getElementById('search-server').onchange = filterItems;
-
+        document.querySelectorAll('.search-input').forEach(el => el.addEventListener('input', filterItems));
         loadMarket();
     </script>
 </body>
