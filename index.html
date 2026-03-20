@@ -13,28 +13,44 @@
         
         /* 3D Product Card Styles */
         .market-card { 
-            background: linear-gradient(145deg, #161616, #0f0f0f);
+            background: linear-gradient(180deg, #161616 0%, #0c0c0c 100%);
             border: 2px solid #222; 
-            border-radius: 1.5rem; 
+            border-radius: 2rem; 
             transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
             position: relative;
-            box-shadow: 0 10px 30px -10px rgba(0,0,0,0.5);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
         }
         .market-card:hover { 
-            transform: translateY(-5px) scale(1.02); 
-            box-shadow: 0 20px 40px -15px rgba(0,0,0,0.7);
+            transform: translateY(-8px); 
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
         }
         
-        /* 3D Color Borders with Inner Glow */
-        .ql-common { border-color: #d4af37; box-shadow: inset 0 0 10px rgba(212, 175, 55, 0.1), 0 5px 15px rgba(212, 175, 55, 0.05); }
-        .ql-rare { border-color: #3b82f6; box-shadow: inset 0 0 10px rgba(59, 130, 246, 0.1), 0 5px 15px rgba(59, 130, 246, 0.1); }
-        .ql-supreme { border-color: #0ea5e9; box-shadow: inset 0 0 10px rgba(14, 165, 233, 0.1), 0 5px 15px rgba(14, 165, 233, 0.1); }
-        .ql-fantastic { border-color: #ec4899; box-shadow: inset 0 0 15px rgba(236, 72, 153, 0.1), 0 5px 20px rgba(236, 72, 153, 0.2); }
+        /* 3D Luminous Borders */
+        .ql-common { border-color: #d4af37; box-shadow: inset 0 0 15px rgba(212, 175, 55, 0.15), 0 0 20px rgba(212, 175, 55, 0.05); } /* Gold */
+        .ql-rare { border-color: #3b82f6; box-shadow: inset 0 0 15px rgba(59, 130, 246, 0.2), 0 0 20px rgba(59, 130, 246, 0.1); }   /* Blue */
+        .ql-supreme { border-color: #0ea5e9; box-shadow: inset 0 0 15px rgba(14, 165, 233, 0.2), 0 0 20px rgba(14, 165, 233, 0.1); } /* Sky Blue */
+        .ql-fantastic { border-color: #ec4899; box-shadow: inset 0 0 20px rgba(236, 72, 153, 0.25), 0 0 25px rgba(236, 72, 153, 0.15); } /* Pink */
 
         .search-input { background: #111; border: 1px solid #222; color: white; padding: 0.6rem 1rem; border-radius: 0.75rem; outline: none; font-size: 0.75rem; width: 100%; }
         .search-input:focus { border-color: #d4af37; }
         
-        .icon-box { background: rgba(255,255,255,0.03); border-radius: 0.75rem; display: flex; align-items: center; justify-content: center; width: 42px; height: 42px; border: 1px solid rgba(255,255,255,0.05); }
+        /* Top Icon Positioning */
+        .icon-header { 
+            background: #1a1a1a; 
+            border-radius: 1rem; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            width: 54px; 
+            height: 54px; 
+            border: 1px solid rgba(255,255,255,0.05);
+            margin-top: -27px; /* Pulls it halfway out of the top */
+            margin-bottom: 20px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.4);
+        }
     </style>
 </head>
 <body class="flex min-h-screen">
@@ -54,20 +70,19 @@
         </nav>
     </aside>
 
-    <main class="flex-1 p-10">
+    <main class="flex-1 p-16">
         <div class="max-w-7xl mx-auto">
             
-            <div class="mb-10 grid grid-cols-1 md:grid-cols-4 gap-4 bg-[#141414] p-6 rounded-2xl border border-stone-900 shadow-2xl">
-                <input type="text" id="search-item" class="search-input" placeholder="Search Product...">
-                <input type="text" id="search-seller" class="search-input" placeholder="Search Seller...">
+            <div class="mb-20 grid grid-cols-1 md:grid-cols-4 gap-4 bg-[#141414] p-6 rounded-2xl border border-stone-900 shadow-2xl">
+                <input type="text" id="search-item" class="search-input" placeholder="Product Name">
+                <input type="text" id="search-seller" class="search-input" placeholder="Seller Name">
                 <select id="search-category" class="search-input">
                     <option value="">All Categories</option>
                     <option value="Tools">Tools</option>
                     <option value="Armor">Armor</option>
                     <option value="Weapons">Weapons</option>
                     <option value="Resources">Resources</option>
-                    <option value="Food">Food</option>
-                    <option value="Animals">Animals</option>
+                    <option value="Bred Animals">Bred Animals</option>
                 </select>
                 <select id="search-server" class="search-input">
                     <option value="">All Servers</option>
@@ -78,7 +93,7 @@
                 </select>
             </div>
 
-            <div id="market-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <div id="market-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-y-16 gap-x-8">
                 </div>
         </div>
     </main>
@@ -96,25 +111,19 @@
             renderMarket(allItems);
         }
 
-        function getCategoryIcon(cat) {
-            const map = {
-                'Tools': 'hammer',
-                'Armor': 'shield',
-                'Weapons': 'swords',
-                'Resources': 'box',
-                'Food': 'utensils',
-                'Animals': 'shrub'
-            };
+        function getIcon(cat) {
+            const map = { 'Tools': 'hammer', 'Armor': 'shield', 'Weapons': 'swords', 'Resources': 'box', 'Bred Animals': 'dog' };
             return map[cat] || 'package';
         }
 
         function renderMarket(items) {
             const container = document.getElementById('market-grid');
             container.innerHTML = items.map(item => {
-                let qlClass = "ql-common";
-                if (item.base_ql >= 90) qlClass = "ql-fantastic";
-                else if (item.base_ql >= 70) qlClass = "ql-supreme";
-                else if (item.base_ql >= 50) qlClass = "ql-rare";
+                let qlClass = "ql-common"; // Gold
+                let qlColor = "text-[#d4af37]";
+                if (item.base_ql >= 90) { qlClass = "ql-fantastic"; qlColor = "text-[#ec4899]"; }
+                else if (item.base_ql >= 70) { qlClass = "ql-supreme"; qlColor = "text-[#0ea5e9]"; }
+                else if (item.base_ql >= 50) { qlClass = "ql-rare"; qlColor = "text-[#3b82f6]"; }
 
                 const price = [
                     item.price_g > 0 ? `<span class="text-yellow-500">${item.price_g}g</span>` : '',
@@ -122,59 +131,50 @@
                     item.price_c > 0 ? `<span class="text-orange-600">${item.price_c}c</span>` : ''
                 ].filter(p => p !== "").join(' ');
 
-                const iconName = getCategoryIcon(item.category);
-
                 return `
-                <div class="market-card p-6 ${qlClass}">
-                    <div class="flex justify-between items-start mb-6">
-                        <div class="flex gap-4 items-center">
-                            <div class="icon-box text-stone-500">
-                                <i data-lucide="${iconName}" class="w-5 h-5"></i>
-                            </div>
-                            <div>
-                                <h3 class="text-white font-black uppercase text-lg leading-tight tracking-tight">${item.item_name}</h3>
-                                <p class="text-[10px] text-stone-600 font-bold uppercase tracking-widest mt-1">
-                                    QL ${item.base_ql} • ${item.profiles?.server_name || 'Global'}
-                                </p>
-                            </div>
-                        </div>
+                <div class="market-card p-8 ${qlClass}">
+                    <div class="icon-header ${qlColor}">
+                        <i data-lucide="${getIcon(item.category)}" class="w-6 h-6"></i>
                     </div>
 
-                    <div class="flex justify-between items-end">
-                        <div class="flex flex-col">
-                            <span class="text-[9px] font-black uppercase text-stone-700 tracking-tighter mb-1">Merchant</span>
-                            <span class="text-[10px] font-black uppercase text-stone-400">
-                                ${item.profiles?.character_name || 'Unknown'}
-                            </span>
+                    <h3 class="text-white font-black uppercase text-xl mb-1 tracking-tight">${item.item_name}</h3>
+                    <p class="text-[10px] text-stone-600 font-bold uppercase tracking-[0.2em] mb-6">
+                        QL ${item.base_ql} • ${item.profiles?.server_name || 'Global'}
+                    </p>
+
+                    <div class="font-mono text-2xl font-black mb-8">
+                        ${price || '<span class="text-stone-800 text-sm italic">Taking Offers</span>'}
+                    </div>
+
+                    <div class="w-full pt-6 border-t border-stone-900/50 flex justify-between items-center mt-auto">
+                        <div class="text-left">
+                            <span class="block text-[8px] font-black text-stone-700 uppercase mb-1">Merchant</span>
+                            <span class="text-[10px] font-black text-stone-400 uppercase tracking-tighter">${item.profiles?.character_name || 'Unknown'}</span>
                         </div>
-                        <div class="text-right">
-                            <div class="font-mono text-lg font-bold mb-3">${price || '<span class="text-stone-800">OFFER</span>'}</div>
-                            <a href="merchant.html?id=${item.seller_id}" class="inline-block text-[9px] font-black uppercase bg-stone-900 px-5 py-2.5 rounded-xl hover:bg-white hover:text-black transition-all border border-stone-800 shadow-lg">
-                                View Details
-                            </a>
-                        </div>
+                        <a href="merchant.html?id=${item.seller_id}" class="bg-stone-900 border border-stone-800 text-white text-[9px] font-black uppercase px-5 py-2.5 rounded-xl hover:bg-white hover:text-black transition-all">
+                            View Shop
+                        </a>
                     </div>
                 </div>
             `}).join('');
             lucide.createIcons();
         }
 
-        const filterItems = () => {
-            const iQ = document.getElementById('search-item').value.toLowerCase();
-            const sQ = document.getElementById('search-seller').value.toLowerCase();
-            const cQ = document.getElementById('search-category').value;
-            const svQ = document.getElementById('search-server').value;
+        const filter = () => {
+            const i = document.getElementById('search-item').value.toLowerCase();
+            const s = document.getElementById('search-seller').value.toLowerCase();
+            const c = document.getElementById('search-category').value;
+            const sv = document.getElementById('search-server').value;
 
-            const filtered = allItems.filter(item => {
-                return item.item_name.toLowerCase().includes(iQ) &&
-                       (item.profiles?.character_name || '').toLowerCase().includes(sQ) &&
-                       (cQ === "" || item.category === cQ) &&
-                       (svQ === "" || item.profiles?.server_name === svQ);
-            });
-            renderMarket(filtered);
+            renderMarket(allItems.filter(item => 
+                item.item_name.toLowerCase().includes(i) &&
+                (item.profiles?.character_name || '').toLowerCase().includes(s) &&
+                (c === "" || item.category === c) &&
+                (sv === "" || item.profiles?.server_name === sv)
+            ));
         };
 
-        document.querySelectorAll('.search-input').forEach(el => el.addEventListener('input', filterItems));
+        document.querySelectorAll('.search-input').forEach(el => el.addEventListener('input', filter));
         loadMarket();
     </script>
 </body>
