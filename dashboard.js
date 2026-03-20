@@ -3,7 +3,7 @@ const _url = 'https://gjftmhvteylhtlwcouwg.supabase.co';
 const _key = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdqZnRtaHZ0ZXlsaHRsd2NvdXdnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg5MTg5MDUsImV4cCI6MjA4NDQ5NDkwNX0.SBELcOhXZrm8fWHTaC1Ujjo-ZL7qUelFjxs7hmWGY5k';
 const client = createClient(_url, _key);
 
-async function initDashboard() {
+async function init() {
     const { data: { user } } = await client.auth.getUser();
     if (!user) { 
         window.location.href = 'login.html'; 
@@ -11,11 +11,11 @@ async function initDashboard() {
     }
 
     // --- LIVE STATUS PULSE ---
-    // Updates your 'updated_at' timestamp so the merchant page shows you as "Online"
+    // Updates 'updated_at' so the front page shows you as "Online"
     await client.from('profiles').update({ updated_at: new Date() }).eq('id', user.id);
 
     // --- CRITICAL AUTO-FIX ---
-    // Links legacy items to your merchant ID if they are missing the seller_id
+    // Ensures all items are correctly linked to your merchant ID
     await client
         .from('products')
         .update({ seller_id: user.id })
@@ -23,45 +23,34 @@ async function initDashboard() {
         .is('seller_id', null);
     
     loadProfile(user.id);
-    loadMyItems(user.id);
+    loadMyProducts(user.id);
     loadMessages(user.id);
 }
 
-// PROFILE MANAGEMENT
+// PROFILE MANAGEMENT (Restored to match your HTML IDs: prof_name, prof_server, prof_bio)
 async function loadProfile(userId) {
-    const { data } = await client.from('profiles').select('*').eq('id', userId).single();
-    if (data) {
-        // Mapping DB fields to the dashboard.html IDs
-        if(document.getElementById('prof_name')) document.getElementById('prof_name').value = data.character_name || '';
-        if(document.getElementById('prof_server')) document.getElementById('prof_server').value = data.server_name || 'Cadence';
-        if(document.getElementById('prof_bio')) document.getElementById('prof_bio').value = data.bio || '';
-        
-        // Support for old ID names if still present in HTML
-        if(document.getElementById('char-name')) document.getElementById('char-name').value = data.character_name || '';
-        if(document.getElementById('char-server')) document.getElementById('char-server').value = data.server_name || 'Cadence';
-        if(document.getElementById('char-bio')) document.getElementById('char-bio').value = data.bio || '';
+    const { data: profile } = await client.from('profiles').select('*').eq('id', userId).maybeSingle();
+    if (profile) {
+        if(document.getElementById('prof_name')) document.getElementById('prof_name').value = profile.character_name || "";
+        if(document.getElementById('prof_server')) document.getElementById('prof_server').value = profile.server_name || "Cadence";
+        if(document.getElementById('prof_bio')) document.getElementById('prof_bio').value = profile.bio || "";
     }
 }
 
 window.updateProfile = async () => {
     const { data: { user } } = await client.auth.getUser();
-    const name = document.getElementById('prof_name')?.value || document.getElementById('char-name')?.value;
-    const server = document.getElementById('prof_server')?.value || document.getElementById('char-server')?.value;
-    const bio = document.getElementById('prof_bio')?.value || document.getElementById('char-bio')?.value;
-
     const { error } = await client.from('profiles').upsert({
         id: user.id,
-        character_name: name,
-        server_name: server,
-        bio: bio,
+        character_name: document.getElementById('prof_name').value,
+        server_name: document.getElementById('prof_server').value,
+        bio: document.getElementById('prof_bio').value,
         updated_at: new Date()
     });
-
-    if (error) alert(error.message);
-    else alert("Profile updated! Your status is now 'Online'.");
+    if (!error) alert("Profile updated! You are now appearing as 'Online'.");
+    else alert("Error updating profile: " + error.message);
 };
 
-// INQUIRY MANAGEMENT
+// CUSTOMER INQUIRIES
 async function loadMessages(userId) {
     const { data } = await client.from('inquiries').select('*').eq('seller_id', userId).order('created_at', { ascending: false });
     const container = document.getElementById('message-container');
@@ -76,7 +65,7 @@ async function loadMessages(userId) {
     if(countBadge) countBadge.innerText = `${data.length} Total`;
     if(container) {
         container.innerHTML = data.map(msg => `
-            <div class="p-4 rounded-xl message-pill flex justify-between items-start group mb-3">
+            <div class="p-4 rounded-xl message-pill flex justify-between items-start group">
                 <div class="flex-1">
                     <div class="flex justify-between items-start mb-1">
                         <span class="text-xs font-bold text-yellow-600 uppercase tracking-tighter">${msg.sender_name}</span>
@@ -105,23 +94,18 @@ window.deleteMessage = async (id) => {
     }
 };
 
-// LISTING LOGIC
-async function loadMyItems(userId) {
-    const { data } = await client
-        .from('products')
-        .select('*')
-        .eq('seller_id', userId)
-        .order('created_at', { ascending: false });
-        
-    const container = document.getElementById('my-listings') || document.getElementById('my-inventory');
+// LISTING LOGIC (Matches your HTML ID: my-listings)
+async function loadMyProducts(userId) {
+    const { data } = await client.from('products').select('*').eq('seller_id', userId).order('created_at', {ascending: false});
+    const container = document.getElementById('my-listings');
     
     if (!data || data.length === 0) {
-        container.innerHTML = "<p class='text-stone-600 italic text-center py-6'>No active listings.</p>";
+        container.innerHTML = `<div class="p-12 text-center text-stone-700 italic border border-dashed border-stone-900 rounded-3xl">No listings yet.</div>`;
         return;
     }
 
     container.innerHTML = data.map(item => `
-        <div class="p-5 bg-[#111] border border-stone-900 rounded-2xl flex justify-between items-center group hover:border-stone-700 transition-all mb-3">
+        <div class="p-5 bg-[#111] border border-stone-900 rounded-2xl flex justify-between items-center group hover:border-stone-700 transition-all">
             <div class="flex gap-4 items-center">
                 <div class="w-10 h-10 bg-stone-900 rounded-lg flex items-center justify-center text-stone-600"><i data-lucide="package" class="w-5 h-5"></i></div>
                 <div>
@@ -136,6 +120,7 @@ async function loadMyItems(userId) {
                     ${item.price_g > 0 ? `<span class="text-yellow-500">${item.price_g}g</span>` : ''}
                     ${item.price_s > 0 ? `<span class="text-stone-300 ml-1">${item.price_s}s</span>` : ''}
                     ${item.price_c > 0 ? `<span class="text-orange-600 ml-1">${item.price_c}c</span>` : ''}
+                    ${item.price_i > 0 ? `<span class="text-stone-500 ml-1">${item.price_i}i</span>` : ''}
                 </div>
                 <div class="flex gap-2">
                     <button onclick="editProduct(${JSON.stringify(item).replace(/"/g, '&quot;')})" class="p-2 text-stone-600 hover:text-blue-400"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
@@ -196,14 +181,14 @@ document.getElementById('product-form').onsubmit = async (e) => {
     else await client.from('products').insert([itemData]);
 
     resetForm();
-    loadMyItems(user.id);
+    loadMyProducts(user.id);
 };
 
 window.deleteProduct = async (id) => {
     if (confirm('Remove this listing?')) {
         await client.from('products').delete().eq('id', id);
         const { data: { user } } = await client.auth.getUser();
-        loadMyItems(user.id);
+        loadMyProducts(user.id);
     }
 };
 
@@ -212,4 +197,4 @@ window.handleLogout = async () => {
     window.location.href = 'index.html'; 
 };
 
-document.addEventListener('DOMContentLoaded', initDashboard);
+document.addEventListener('DOMContentLoaded', init);
