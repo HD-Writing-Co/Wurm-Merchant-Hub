@@ -29,15 +29,14 @@
         }
         
         /* 3D Luminous Borders */
-        .ql-common { border-color: #d4af37; box-shadow: inset 0 0 15px rgba(212, 175, 55, 0.15), 0 0 20px rgba(212, 175, 55, 0.05); } /* Gold */
-        .ql-rare { border-color: #3b82f6; box-shadow: inset 0 0 15px rgba(59, 130, 246, 0.2), 0 0 20px rgba(59, 130, 246, 0.1); }   /* Blue */
-        .ql-supreme { border-color: #0ea5e9; box-shadow: inset 0 0 15px rgba(14, 165, 233, 0.2), 0 0 20px rgba(14, 165, 233, 0.1); } /* Sky Blue */
-        .ql-fantastic { border-color: #ec4899; box-shadow: inset 0 0 20px rgba(236, 72, 153, 0.25), 0 0 25px rgba(236, 72, 153, 0.15); } /* Pink */
+        .ql-common { border-color: #d4af37; box-shadow: inset 0 0 15px rgba(212, 175, 55, 0.15), 0 0 20px rgba(212, 175, 55, 0.05); }
+        .ql-rare { border-color: #3b82f6; box-shadow: inset 0 0 15px rgba(59, 130, 246, 0.2), 0 0 20px rgba(59, 130, 246, 0.1); }
+        .ql-supreme { border-color: #0ea5e9; box-shadow: inset 0 0 15px rgba(14, 165, 233, 0.2), 0 0 20px rgba(14, 165, 233, 0.1); }
+        .ql-fantastic { border-color: #ec4899; box-shadow: inset 0 0 20px rgba(236, 72, 153, 0.25), 0 0 25px rgba(236, 72, 153, 0.15); }
 
         .search-input { background: #111; border: 1px solid #222; color: white; padding: 0.6rem 1rem; border-radius: 0.75rem; outline: none; font-size: 0.75rem; width: 100%; }
         .search-input:focus { border-color: #d4af37; }
         
-        /* Top Icon Positioning */
         .icon-header { 
             background: #1a1a1a; 
             border-radius: 1rem; 
@@ -47,7 +46,7 @@
             width: 54px; 
             height: 54px; 
             border: 1px solid rgba(255,255,255,0.05);
-            margin-top: -27px; /* Pulls it halfway out of the top */
+            margin-top: -27px; 
             margin-bottom: 20px;
             box-shadow: 0 10px 20px rgba(0,0,0,0.4);
         }
@@ -119,7 +118,7 @@
         function renderMarket(items) {
             const container = document.getElementById('market-grid');
             container.innerHTML = items.map(item => {
-                let qlClass = "ql-common"; // Gold
+                let qlClass = "ql-common";
                 let qlColor = "text-[#d4af37]";
                 if (item.base_ql >= 90) { qlClass = "ql-fantastic"; qlColor = "text-[#ec4899]"; }
                 else if (item.base_ql >= 70) { qlClass = "ql-supreme"; qlColor = "text-[#0ea5e9]"; }
@@ -137,12 +136,15 @@
                         <i data-lucide="${getIcon(item.category)}" class="w-6 h-6"></i>
                     </div>
 
-                    <h3 class="text-white font-black uppercase text-xl mb-1 tracking-tight">${item.item_name}</h3>
-                    <p class="text-[10px] text-stone-600 font-bold uppercase tracking-[0.2em] mb-6">
-                        QL ${item.base_ql} • ${item.profiles?.server_name || 'Global'}
+                    <h3 class="text-white font-black uppercase text-xl mb-3 tracking-tight">${item.item_name}</h3>
+                    
+                    <p class="text-[11px] text-stone-300 font-extrabold uppercase tracking-[0.15em] mb-8">
+                        <span class="${qlColor}">QL ${item.base_ql}</span> 
+                        <span class="mx-2 text-stone-700">•</span> 
+                        ${item.profiles?.server_name || 'Global'}
                     </p>
 
-                    <div class="font-mono text-2xl font-black mb-8">
+                    <div class="font-mono text-2xl font-black mb-10">
                         ${price || '<span class="text-stone-800 text-sm italic">Taking Offers</span>'}
                     </div>
 
