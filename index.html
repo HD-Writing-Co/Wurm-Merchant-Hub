@@ -11,18 +11,30 @@
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
         body { background-color: #0b0b0b; color: #e5d5b5; font-family: 'Inter', sans-serif; }
         
-        /* Product Card Styles */
-        .market-card { background: #111; border: 2px solid #222; border-radius: 1.25rem; transition: all 0.3s; position: relative; overflow: hidden; }
-        .market-card:hover { transform: translateY(-3px); }
+        /* 3D Product Card Styles */
+        .market-card { 
+            background: linear-gradient(145deg, #161616, #0f0f0f);
+            border: 2px solid #222; 
+            border-radius: 1.5rem; 
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
+            position: relative;
+            box-shadow: 0 10px 30px -10px rgba(0,0,0,0.5);
+        }
+        .market-card:hover { 
+            transform: translateY(-5px) scale(1.02); 
+            box-shadow: 0 20px 40px -15px rgba(0,0,0,0.7);
+        }
         
-        /* Updated Quality Based Borders per request */
-        .ql-common { border-color: #d4af37; box-shadow: 0 0 10px rgba(212, 175, 55, 0.1); } /* Gold */
-        .ql-rare { border-color: #3b82f6; box-shadow: 0 0 10px rgba(59, 130, 246, 0.1); }   /* Blue */
-        .ql-supreme { border-color: #0ea5e9; box-shadow: 0 0 10px rgba(14, 165, 233, 0.1); } /* Sky Blue */
-        .ql-fantastic { border-color: #ec4899; box-shadow: 0 0 15px rgba(236, 72, 153, 0.2); } /* Pink */
+        /* 3D Color Borders with Inner Glow */
+        .ql-common { border-color: #d4af37; box-shadow: inset 0 0 10px rgba(212, 175, 55, 0.1), 0 5px 15px rgba(212, 175, 55, 0.05); }
+        .ql-rare { border-color: #3b82f6; box-shadow: inset 0 0 10px rgba(59, 130, 246, 0.1), 0 5px 15px rgba(59, 130, 246, 0.1); }
+        .ql-supreme { border-color: #0ea5e9; box-shadow: inset 0 0 10px rgba(14, 165, 233, 0.1), 0 5px 15px rgba(14, 165, 233, 0.1); }
+        .ql-fantastic { border-color: #ec4899; box-shadow: inset 0 0 15px rgba(236, 72, 153, 0.1), 0 5px 20px rgba(236, 72, 153, 0.2); }
 
         .search-input { background: #111; border: 1px solid #222; color: white; padding: 0.6rem 1rem; border-radius: 0.75rem; outline: none; font-size: 0.75rem; width: 100%; }
         .search-input:focus { border-color: #d4af37; }
+        
+        .icon-box { background: rgba(255,255,255,0.03); border-radius: 0.75rem; display: flex; align-items: center; justify-content: center; width: 42px; height: 42px; border: 1px solid rgba(255,255,255,0.05); }
     </style>
 </head>
 <body class="flex min-h-screen">
@@ -45,7 +57,7 @@
     <main class="flex-1 p-10">
         <div class="max-w-7xl mx-auto">
             
-            <div class="mb-10 grid grid-cols-1 md:grid-cols-4 gap-4 bg-[#141414] p-6 rounded-2xl border border-stone-900">
+            <div class="mb-10 grid grid-cols-1 md:grid-cols-4 gap-4 bg-[#141414] p-6 rounded-2xl border border-stone-900 shadow-2xl">
                 <input type="text" id="search-item" class="search-input" placeholder="Search Product...">
                 <input type="text" id="search-seller" class="search-input" placeholder="Search Seller...">
                 <select id="search-category" class="search-input">
@@ -54,6 +66,8 @@
                     <option value="Armor">Armor</option>
                     <option value="Weapons">Weapons</option>
                     <option value="Resources">Resources</option>
+                    <option value="Food">Food</option>
+                    <option value="Animals">Animals</option>
                 </select>
                 <select id="search-server" class="search-input">
                     <option value="">All Servers</option>
@@ -64,7 +78,7 @@
                 </select>
             </div>
 
-            <div id="market-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div id="market-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                 </div>
         </div>
     </main>
@@ -82,42 +96,63 @@
             renderMarket(allItems);
         }
 
+        function getCategoryIcon(cat) {
+            const map = {
+                'Tools': 'hammer',
+                'Armor': 'shield',
+                'Weapons': 'swords',
+                'Resources': 'box',
+                'Food': 'utensils',
+                'Animals': 'shrub'
+            };
+            return map[cat] || 'package';
+        }
+
         function renderMarket(items) {
             const container = document.getElementById('market-grid');
             container.innerHTML = items.map(item => {
-                // Determine Border Class based on QL
-                let qlClass = "ql-common"; // Gold
-                if (item.base_ql >= 90) qlClass = "ql-fantastic"; // Pink
-                else if (item.base_ql >= 70) qlClass = "ql-supreme"; // Sky Blue
-                else if (item.base_ql >= 50) qlClass = "ql-rare"; // Blue
+                let qlClass = "ql-common";
+                if (item.base_ql >= 90) qlClass = "ql-fantastic";
+                else if (item.base_ql >= 70) qlClass = "ql-supreme";
+                else if (item.base_ql >= 50) qlClass = "ql-rare";
 
-                // Format Price (Hide zero values and make font larger)
                 const price = [
                     item.price_g > 0 ? `<span class="text-yellow-500">${item.price_g}g</span>` : '',
                     item.price_s > 0 ? `<span class="text-stone-300">${item.price_s}s</span>` : '',
                     item.price_c > 0 ? `<span class="text-orange-600">${item.price_c}c</span>` : ''
                 ].filter(p => p !== "").join(' ');
 
+                const iconName = getCategoryIcon(item.category);
+
                 return `
                 <div class="market-card p-6 ${qlClass}">
-                    <div class="flex justify-between items-start mb-4">
-                        <div>
-                            <h3 class="text-white font-black uppercase text-lg leading-tight">${item.item_name}</h3>
-                            <p class="text-[10px] text-stone-600 font-bold uppercase tracking-widest mt-1">
-                                QL ${item.base_ql} • ${item.profiles?.server_name || 'Global'}
-                            </p>
-                        </div>
-                        <div class="text-right font-mono text-base font-bold">
-                            ${price || '<span class="text-stone-700 text-xs">Offer</span>'}
+                    <div class="flex justify-between items-start mb-6">
+                        <div class="flex gap-4 items-center">
+                            <div class="icon-box text-stone-500">
+                                <i data-lucide="${iconName}" class="w-5 h-5"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-white font-black uppercase text-lg leading-tight tracking-tight">${item.item_name}</h3>
+                                <p class="text-[10px] text-stone-600 font-bold uppercase tracking-widest mt-1">
+                                    QL ${item.base_ql} • ${item.profiles?.server_name || 'Global'}
+                                </p>
+                            </div>
                         </div>
                     </div>
-                    <div class="flex justify-between items-center mt-8 pt-4 border-t border-stone-900/50">
-                        <span class="text-[10px] font-black uppercase text-stone-500">
-                            ${item.profiles?.character_name || 'Unknown'}
-                        </span>
-                        <a href="merchant.html?id=${item.seller_id}" class="text-[9px] font-black uppercase bg-stone-900 px-4 py-2 rounded-lg hover:bg-white hover:text-black transition-all border border-stone-800">
-                            View Shop
-                        </a>
+
+                    <div class="flex justify-between items-end">
+                        <div class="flex flex-col">
+                            <span class="text-[9px] font-black uppercase text-stone-700 tracking-tighter mb-1">Merchant</span>
+                            <span class="text-[10px] font-black uppercase text-stone-400">
+                                ${item.profiles?.character_name || 'Unknown'}
+                            </span>
+                        </div>
+                        <div class="text-right">
+                            <div class="font-mono text-lg font-bold mb-3">${price || '<span class="text-stone-800">OFFER</span>'}</div>
+                            <a href="merchant.html?id=${item.seller_id}" class="inline-block text-[9px] font-black uppercase bg-stone-900 px-5 py-2.5 rounded-xl hover:bg-white hover:text-black transition-all border border-stone-800 shadow-lg">
+                                View Details
+                            </a>
+                        </div>
                     </div>
                 </div>
             `}).join('');
