@@ -92,16 +92,40 @@
                     </div>
 
                     <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <label class="label-text">Category</label>
-                            <select id="item-cat" class="search-input">
-                                <option value="Tools">Tools</option>
-                                <option value="Armor">Armor</option>
-                                <option value="Weapons">Weapons</option>
-                                <option value="Resources">Resources</option>
-                                <option value="Bred Animals">Bred Animals</option>
-                            </select>
-                        </div>
+                        To ensure the Merchant Portal allows for the full range of items found in the Wurm universe, I have expanded the category list in dashboard.html. This now includes specialized tabs for everything from Affinity items and Runic enhancements to Bulk materials and Animals.
+
+Updated dashboard.html Category List
+Replace the <select id="item-cat"> block in your dashboard.html with this comprehensive list:
+
+HTML
+<div>
+    <label class="label-text">Category</label>
+    <select id="item-cat" class="search-input">
+        <optgroup label="Equipment">
+            <option value="Tools">Tools</option>
+            <option value="Armor">Armor</option>
+            <option value="Weapons">Weapons</option>
+            <option value="Jewelry">Jewelry</option>
+        </optgroup>
+        <optgroup label="Materials & Bulk">
+            <option value="Resources">Resources (Raw)</option>
+            <option value="Bulk Goods">Bulk Goods (Combined)</option>
+            <option value="Alchemy">Alchemy & Liquids</option>
+        </optgroup>
+        <optgroup label="Construction & Home">
+            <option value="Ship Building">Ship Building</option>
+            <option value="Decorations">Decorations & Furniture</option>
+            <option value="Machines">Machines & Siege</option>
+        </optgroup>
+        <optgroup label="Specialized">
+            <option value="Bred Animals">Bred Animals</option>
+            <option value="Food & Drink">Food & Drink</option>
+            <option value="Enchantments">Runic & Enchantments</option>
+            <option value="Affinity Items">Affinity Items</option>
+            <option value="Rare Skins">Rare Skins / Cosmetics</option>
+        </optgroup>
+    </select>
+</div>
                         <div>
                             <label class="label-text">Rarity</label>
                             <select id="item-rarity" class="search-input">
