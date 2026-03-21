@@ -5,23 +5,12 @@ const client = createClient(_url, _key);
 
 async function initDashboard() {
     const { data: { user } } = await client.auth.getUser();
-    if (!user) { 
-        window.location.href = 'login.html'; 
-        return; 
-    }
-
-    // Auto-fix for legacy items
-    await client
-        .from('products')
-        .update({ seller_id: user.id })
-        .eq('user_id', user.id)
-        .is('seller_id', null);
-    
+    if (!user) { window.location.href = 'login.html'; return; }
     loadProfile(user.id);
     loadMyItems(user.id);
 }
 
-// PROFILE MANAGEMENT
+// PROFILE
 async function loadProfile(userId) {
     const { data } = await client.from('profiles').select('*').eq('id', userId).single();
     if (data) {
@@ -37,24 +26,59 @@ window.saveProfile = async () => {
         id: user.id,
         character_name: document.getElementById('char-name').value,
         server_name: document.getElementById('char-server').value,
-        bio: document.getElementById('char-bio').value,
-        updated_at: new Date()
+        bio: document.getElementById('char-bio').value
     });
-    if (error) alert(error.message);
-    else alert("Profile updated!");
+    alert(error ? error.message : "Profile updated!");
 };
 
-// LISTING LOGIC
+// INVENTORY MANAGEMENT
+window.handleFormSubmit = async (e) => {
+    e.preventDefault();
+    const { data: { user } } = await client.auth.getUser();
+    const itemId = document.getElementById('edit-item-id').value;
+
+    const payload = {
+        seller_id: user.id,
+        item_name: document.getElementById('item-name').value,
+        category: document.getElementById('item-cat').value,
+        rarity: document.getElementById('item-rarity').value,
+        base_ql: parseInt(document.getElementById('item-ql').value) || 0,
+        quantity: parseInt(document.getElementById('item-qty').value) || 1,
+        price_g: parseInt(document.getElementById('price-g').value) || 0,
+        price_s: parseInt(document.getElementById('price-s').value) || 0,
+        price_c: parseInt(document.getElementById('price-c').value) || 0
+    };
+
+    const { error } = itemId 
+        ? await client.from('products').update(payload).eq('id', itemId)
+        : await client.from('products').insert([payload]);
+
+    if (!error) { resetForm(); loadMyItems(user.id); }
+    else alert(error.message);
+};
+
+window.deleteItem = async (itemId) => {
+    if (confirm("Remove this listing?")) {
+        const { error } = await client.from('products').delete().eq('id', itemId);
+        if (!error) {
+            const { data: { user } } = await client.auth.getUser();
+            loadMyItems(user.id);
+        } else {
+            alert(error.message);
+        }
+    }
+};
+
 window.startEdit = async (itemId) => {
-    const { data, error } = await client.from('products').select('*').eq('id', itemId).single();
-    if (error) return;
+    const { data } = await client.from('products').select('*').eq('id', itemId).single();
+    if (!data) return;
 
     document.getElementById('edit-item-id').value = data.id;
     document.getElementById('item-name').value = data.item_name;
     document.getElementById('item-cat').value = data.category;
-    document.getElementById('item-ql').value = data.base_ql || '';
-    document.getElementById('item-qty').value = data.quantity || '';
     document.getElementById('item-rarity').value = data.rarity || 'Common';
+    document.getElementById('item-ql').value = data.base_ql;
+    document.getElementById('item-qty').value = data.quantity;
     document.getElementById('price-g').value = data.price_g;
     document.getElementById('price-s').value = data.price_s;
     document.getElementById('price-c').value = data.price_c;
@@ -68,48 +92,35 @@ window.startEdit = async (itemId) => {
 window.resetForm = () => {
     document.getElementById('add-item-form').reset();
     document.getElementById('edit-item-id').value = "";
-    document.getElementById('form-title').innerText = "Add New Inventory";
+    document.getElementById('form-title').innerText = "Add New Listing";
     document.getElementById('submit-btn').innerText = "List Item on Hub";
     document.getElementById('cancel-edit').classList.add('hidden');
 };
 
 async function loadMyItems(userId) {
-    const { data } = await client
-        .from('products')
-        .select('*')
-        .eq('seller_id', userId)
-        .order('created_at', { ascending: false });
-        
+    const { data } = await client.from('products').select('*').eq('seller_id', userId).order('created_at', { ascending: false });
     const container = document.getElementById('my-inventory');
     
-    if (data && data.length > 0) {
-        container.innerHTML = data.map(item => {
-            // Determine rarity color for the dashboard list
-            let rarColor = "text-[#d4af37]"; // Common/Gold
-            if (item.rarity === 'Fantastic') rarColor = "text-[#ec4899]";
-            else if (item.rarity === 'Supreme') rarColor = "text-[#0ea5e9]";
-            else if (item.rarity === 'Rare') rarColor = "text-[#3b82f6]";
+    container.innerHTML = (data || []).map(item => {
+        let rarColor = "text-[#d4af37]";
+        if (item.rarity === 'Fantastic') rarColor = "text-[#ec4899]";
+        else if (item.rarity === 'Supreme') rarColor = "text-[#0ea5e9]";
+        else if (item.rarity === 'Rare') rarColor = "text-[#3b82f6]";
 
-            return `
-            <div class="flex justify-between items-center bg-stone-900/50 p-4 rounded-xl border border-stone-800 mb-2">
-                <div>
-                    <span class="text-white font-bold">${item.item_name}</span>
-                    <span class="${rarColor} ml-2 font-black uppercase text-[10px] tracking-tighter">
-                        ${item.rarity || 'Common'} • ${item.base_ql || 'Bulk'} QL
-                    </span>
-                    <p class="text-[10px] text-stone-500 uppercase mt-1">
-                        Stock: ${item.quantity || 'N/A'} • ${item.price_g}g ${item.price_s}s ${item.price_c}c
-                    </p>
-                </div>
-                <div class="flex gap-4">
-                    <button onclick="startEdit(${item.id})" class="text-stone-400 hover:text-white text-[10px] font-black uppercase">Edit</button>
-                    <button onclick="deleteItem(${item.id})" class="text-red-900 hover:text-red-500 text-[10px] font-black uppercase">Remove</button>
-                </div>
-            </div>`;
-        }).join('');
-    } else {
-        container.innerHTML = "<p class='text-stone-600 italic text-center py-6 text-xs'>No active listings.</p>";
-    }
+        return `
+        <div class="flex justify-between items-center bg-stone-900/40 p-5 rounded-2xl border border-stone-900">
+            <div>
+                <span class="text-white font-bold text-sm">${item.item_name}</span>
+                <span class="${rarColor} ml-2 font-black uppercase text-[9px] tracking-tighter">${item.rarity || 'Common'} • QL ${item.base_ql}</span>
+                <p class="text-[9px] text-stone-500 uppercase mt-1">Stock: ${item.quantity} • ${item.price_g}g ${item.price_s}s ${item.price_c}c</p>
+            </div>
+            <div class="flex gap-4">
+                <button onclick="startEdit(${item.id})" class="text-stone-400 hover:text-white text-[9px] font-black uppercase">Edit</button>
+                <button onclick="deleteItem(${item.id})" class="text-red-900 hover:text-red-500 text-[9px] font-black uppercase">Remove</button>
+            </div>
+        </div>`;
+    }).join('') || "<p class='text-stone-700 italic text-center py-10 text-xs'>No active listings.</p>";
 }
 
+window.signOut = async () => { await client.auth.signOut(); window.location.href = 'login.html'; };
 initDashboard();
