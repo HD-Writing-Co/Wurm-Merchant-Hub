@@ -3,216 +3,166 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Merchant Dashboard | Wurm Hub</title>
+    <title>Merchant Portal | Wurm Hub</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
         body { background-color: #0b0b0b; color: #e5d5b5; font-family: 'Inter', sans-serif; }
-        .dashboard-card { background: #141414; border: 1px solid #222; border-radius: 1.5rem; padding: 2rem; }
-        .input-field { background: #0f0f0f; border: 1px solid #222; color: white; padding: 0.75rem; border-radius: 0.75rem; width: 100%; outline: none; font-size: 0.875rem; }
         
-        /* Currency Border Colors */
-        .border-gold { border-color: #d4af37 !important; border-width: 2px; }
-        .border-silver { border-color: #a8a8a8 !important; border-width: 2px; }
-        .border-copper { border-color: #b87333 !important; border-width: 2px; }
-        .border-iron { border-color: #434b4d !important; border-width: 2px; }
+        .search-input { 
+            background: #111; 
+            border: 1px solid #222; 
+            color: white; 
+            padding: 0.6rem 1rem; 
+            border-radius: 0.75rem; 
+            outline: none; 
+            font-size: 0.75rem; 
+            width: 100%;
+            transition: border-color 0.2s;
+        }
+        .search-input:focus { border-color: #d4af37; }
+
+        .glass-panel {
+            background: linear-gradient(180deg, #141414 0%, #0c0c0c 100%);
+            border: 1px solid #1f1f1f;
+            border-radius: 2rem;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+        }
+
+        .label-text {
+            font-size: 9px;
+            font-weight: 900;
+            text-transform: uppercase;
+            color: #444;
+            letter-spacing: 0.1em;
+            margin-bottom: 0.25rem;
+            display: block;
+        }
+
+        .currency-tag {
+            position: absolute;
+            right: 0.75rem;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 10px;
+            font-weight: 900;
+            pointer-events: none;
+        }
     </style>
 </head>
 <body class="flex min-h-screen">
 
     <aside class="w-72 bg-[#0f0f0f] border-r border-stone-900 p-8 flex flex-col h-screen sticky top-0">
-        <a href="index.html" class="text-2xl font-black italic text-white mb-10 uppercase tracking-tighter hover:opacity-80 transition-opacity">
-            WURM <span class="text-yellow-600">HUB</span>
-        </a>
-        <nav class="space-y-4">
+        <h1 class="text-2xl font-black italic text-white mb-10 uppercase tracking-tighter">WURM <span class="text-yellow-600">HUB</span></h1>
+        <nav class="space-y-4 mb-10">
             <a href="index.html" class="flex items-center gap-3 text-stone-500 hover:text-white transition-all font-bold uppercase text-[10px] tracking-widest">
-                <i data-lucide="arrow-left" class="w-4 h-4"></i> Market Home
+                <i data-lucide="shopping-bag" class="w-4 h-4"></i> Market Home
             </a>
-            <button onclick="handleLogout()" class="flex items-center gap-3 text-red-900 hover:text-red-500 transition-all font-bold uppercase text-[10px] tracking-widest mt-10">
+            <button onclick="signOut()" class="flex items-center gap-3 text-red-900 hover:text-red-500 transition-all font-bold uppercase text-[10px] tracking-widest">
                 <i data-lucide="log-out" class="w-4 h-4"></i> Sign Out
             </button>
         </nav>
+
+        <div class="mt-auto pt-6 border-t border-stone-900">
+            <span class="label-text">Merchant Settings</span>
+            <input type="text" id="char-name" placeholder="Character Name" class="search-input mb-3">
+            <select id="char-server" class="search-input mb-3">
+                <option value="Cadence">Cadence</option>
+                <option value="Harmony">Harmony</option>
+                <option value="Melody">Melody</option>
+                <option value="Zenith">Zenith</option>
+            </select>
+            <textarea id="char-bio" placeholder="Shop description..." class="search-input mb-4 h-24 text-[10px]"></textarea>
+            <button onclick="saveProfile()" class="w-full py-3 bg-white text-black text-[10px] font-black uppercase rounded-xl hover:bg-yellow-600 transition-all">Save Profile</button>
+        </div>
     </aside>
 
-    <main class="flex-1 p-10">
-        <div class="max-w-6xl mx-auto">
-            
-            <section class="mb-10 dashboard-card">
-                <h3 class="text-lg font-black text-white mb-6 uppercase italic">Merchant Profile</h3>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <input type="text" id="prof_name" class="input-field" placeholder="Character Name">
-                    <select id="prof_server" class="input-field">
-                        <option value="Cadence">Cadence</option>
-                        <option value="Harmony">Harmony</option>
-                        <option value="Melody">Melody</option>
-                        <option value="Pristine">Pristine</option>
-                    </select>
-                    <textarea id="prof_bio" class="input-field md:col-span-2 h-24" placeholder="About your shop..."></textarea>
-                    <button onclick="updateProfile()" class="bg-yellow-600 text-black font-black p-3 rounded-xl md:col-span-2 hover:bg-yellow-500 transition-colors">Save Profile</button>
-                </div>
-            </section>
-
-            <section class="mb-10 dashboard-card">
-                <div class="flex justify-between items-center mb-6">
-                    <h3 class="text-lg font-black text-white uppercase italic">Message Requests</h3>
-                    <button onclick="toggleSort()" class="text-[10px] font-black uppercase text-yellow-600 hover:text-white flex items-center gap-2">
-                        Sort Time <i data-lucide="arrow-up-down" class="w-3 h-3"></i>
-                    </button>
-                </div>
-                <div id="message-container" class="space-y-4 max-h-80 overflow-y-auto pr-2">
-                    <p class="text-stone-700 italic text-sm">No messages yet.</p>
-                </div>
-            </section>
-            
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-10">
-                <div class="lg:col-span-1">
-                    <div id="form-container" class="dashboard-card sticky top-10">
-                        <h3 id="form-title" class="text-lg font-black text-white mb-6 uppercase italic">Add Listing</h3>
-                        <form id="product-form" class="space-y-4">
-                            <input type="hidden" id="edit-id">
-                            <input type="text" id="item_name" class="input-field" placeholder="Item Name" required>
-                            <div class="grid grid-cols-2 gap-4">
-                                <input type="number" id="base_ql" class="input-field" value="50">
-                                <input type="text" id="quantity" class="input-field" value="1">
-                            </div>
-                            <div class="grid grid-cols-4 gap-1">
-                                <input type="number" id="price_g" class="input-field border-gold !p-2 text-center" value="0">
-                                <input type="number" id="price_s" class="input-field border-silver !p-2 text-center" value="0">
-                                <input type="number" id="price_c" class="input-field border-copper !p-2 text-center" value="0">
-                                <input type="number" id="price_i" class="input-field border-iron !p-2 text-center" value="0">
-                            </div>
-                            <button type="submit" id="submit-btn" class="w-full bg-yellow-600 text-black font-black p-4 rounded-xl">Post Listing</button>
-                        </form>
+    <main class="flex-1 p-16 flex gap-12">
+        <div class="w-1/3">
+            <div class="glass-panel p-8 sticky top-16">
+                <h2 id="form-title" class="text-white font-black uppercase text-xl mb-8 tracking-tighter">Add New Listing</h2>
+                <form id="add-item-form" class="space-y-5">
+                    <input type="hidden" id="edit-item-id">
+                    
+                    <div>
+                        <label class="label-text">Item Name</label>
+                        <input type="text" id="item-name" placeholder="e.g. Rare Large Maul" class="search-input" required>
                     </div>
-                </div>
 
-                <div class="lg:col-span-2">
-                    <h3 class="text-lg font-black text-white mb-6 uppercase italic">Active Inventory</h3>
-                    <div id="my-listings" class="space-y-3"></div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="label-text">Category</label>
+                            <select id="item-cat" class="search-input">
+                                <option value="Tools">Tools</option>
+                                <option value="Armor">Armor</option>
+                                <option value="Weapons">Weapons</option>
+                                <option value="Resources">Resources</option>
+                                <option value="Bred Animals">Bred Animals</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="label-text">Rarity</label>
+                            <select id="item-rarity" class="search-input">
+                                <option value="Common">Common</option>
+                                <option value="Rare">Rare</option>
+                                <option value="Supreme">Supreme</option>
+                                <option value="Fantastic">Fantastic</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="label-text">Quality (QL)</label>
+                            <input type="number" id="item-ql" placeholder="50" class="search-input">
+                        </div>
+                        <div>
+                            <label class="label-text">Quantity</label>
+                            <input type="number" id="item-qty" placeholder="1" class="search-input">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="label-text">Price (G / S / C)</label>
+                        <div class="grid grid-cols-3 gap-2">
+                            <div class="relative">
+                                <input type="number" id="price-g" placeholder="0" class="search-input pr-6">
+                                <span class="currency-tag text-yellow-600">G</span>
+                            </div>
+                            <div class="relative">
+                                <input type="number" id="price-s" placeholder="0" class="search-input pr-6">
+                                <span class="currency-tag text-stone-400">S</span>
+                            </div>
+                            <div class="relative">
+                                <input type="number" id="price-c" placeholder="0" class="search-input pr-6">
+                                <span class="currency-tag text-orange-700">C</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="pt-4 space-y-3">
+                        <button type="submit" id="submit-btn" class="w-full py-4 bg-yellow-600 text-black text-[11px] font-black uppercase rounded-2xl hover:bg-white transition-all shadow-lg shadow-yellow-900/20">List Item on Hub</button>
+                        <button type="button" id="cancel-edit" onclick="resetForm()" class="w-full py-3 text-stone-600 text-[9px] font-black uppercase hidden">Cancel Edit</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="flex-1">
+            <div class="flex justify-between items-end mb-10">
+                <div>
+                    <h2 class="text-white font-black uppercase text-3xl tracking-tighter">Your Inventory</h2>
+                    <p class="text-stone-600 text-[10px] font-bold uppercase tracking-widest mt-1">Live listings on the Wurm Hub market</p>
                 </div>
             </div>
+            <div id="my-inventory" class="space-y-4">
+                </div>
         </div>
     </main>
 
-    <script>
-        const { createClient } = supabase;
-        const client = createClient('https://gjftmhvteylhtlwcouwg.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdqZnRtaHZ0ZXlsaHRsd2NvdXdnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg5MTg5MDUsImV4cCI6MjA4NDQ5NDkwNX0.SBELcOhXZrm8fWHTaC1Ujjo-ZL7qUelFjxs7hmWGY5k');
-
-        let sortNewest = true;
-
-        async function init() {
-            const { data: { user } } = await client.auth.getUser();
-            if (!user) { window.location.href = 'login.html'; return; }
-            
-            const { data: prof } = await client.from('profiles').select('*').eq('id', user.id).maybeSingle();
-            if (prof) {
-                document.getElementById('prof_name').value = prof.character_name || "";
-                document.getElementById('prof_server').value = prof.server_name || "Cadence";
-                document.getElementById('prof_bio').value = prof.bio || "";
-            }
-            loadMyProducts(user.id);
-            loadMessages(user.id);
-        }
-
-        async function loadMessages(userId) {
-            const { data } = await client.from('inquiries')
-                .select('*')
-                .eq('seller_id', userId)
-                .order('created_at', { ascending: !sortNewest });
-
-            const container = document.getElementById('message-container');
-            if (!data || data.length === 0) return;
-
-            container.innerHTML = data.map(msg => `
-                <div class="p-4 bg-[#1a1a1a] border-l-4 border-yellow-600 rounded-r-xl">
-                    <div class="flex justify-between items-center mb-1">
-                        <span class="text-[10px] font-black text-white uppercase tracking-wider">${msg.sender_name}</span>
-                        <span class="text-[9px] text-stone-600 font-mono">${new Date(msg.created_at).toLocaleString()}</span>
-                    </div>
-                    <p class="text-sm text-stone-300">${msg.message}</p>
-                </div>
-            `).join('');
-        }
-
-        window.toggleSort = () => {
-            sortNewest = !sortNewest;
-            client.auth.getUser().then(({data}) => loadMessages(data.user.id));
-        };
-
-        async function loadMyProducts(userId) {
-            const { data } = await client.from('products').select('*').eq('seller_id', userId);
-            const container = document.getElementById('my-listings');
-            container.innerHTML = data.map(item => `
-                <div class="p-4 bg-[#111] border border-stone-900 rounded-2xl flex justify-between items-center">
-                    <p class="text-white font-bold">${item.item_name} <span class="text-stone-600 text-xs ml-2">QL ${item.base_ql}</span></p>
-                    <div class="flex gap-4 items-center">
-                        <button onclick='editProduct(${JSON.stringify(item)})' class="text-stone-500 hover:text-white text-[10px] font-bold uppercase tracking-widest">Edit</button>
-                        <button onclick="deleteProduct('${item.id}')" class="text-stone-700 hover:text-red-500"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
-                    </div>
-                </div>`).join('');
-            lucide.createIcons();
-        }
-
-        window.editProduct = (item) => {
-            document.getElementById('edit-id').value = item.id;
-            document.getElementById('item_name').value = item.item_name;
-            document.getElementById('base_ql').value = item.base_ql;
-            document.getElementById('quantity').value = item.quantity;
-            document.getElementById('price_g').value = item.price_g;
-            document.getElementById('price_s').value = item.price_s;
-            document.getElementById('price_c').value = item.price_c;
-            document.getElementById('price_i').value = item.price_i;
-            document.getElementById('submit-btn').innerText = "Update Listing";
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        };
-
-        window.deleteProduct = async (id) => {
-            if (confirm('Delete listing?')) {
-                await client.from('products').delete().eq('id', id);
-                client.auth.getUser().then(({data}) => loadMyProducts(data.user.id));
-            }
-        };
-
-        window.updateProfile = async () => {
-            const { data: { user } } = await client.auth.getUser();
-            await client.from('profiles').upsert({
-                id: user.id,
-                character_name: document.getElementById('prof_name').value,
-                server_name: document.getElementById('prof_server').value,
-                bio: document.getElementById('prof_bio').value,
-                updated_at: new Date()
-            });
-            alert("Profile Updated!");
-        };
-
-        document.getElementById('product-form').onsubmit = async (e) => {
-            e.preventDefault();
-            const { data: { user } } = await client.auth.getUser();
-            const editId = document.getElementById('edit-id').value;
-            const itemData = {
-                item_name: document.getElementById('item_name').value,
-                base_ql: parseFloat(document.getElementById('base_ql').value),
-                quantity: document.getElementById('quantity').value,
-                price_g: parseInt(document.getElementById('price_g').value) || 0,
-                price_s: parseInt(document.getElementById('price_s').value) || 0,
-                price_c: parseInt(document.getElementById('price_c').value) || 0,
-                price_i: parseInt(document.getElementById('price_i').value) || 0,
-                seller_id: user.id
-            };
-
-            if (editId) await client.from('products').update(itemData).eq('id', editId);
-            else await client.from('products').insert([itemData]);
-            
-            e.target.reset();
-            document.getElementById('edit-id').value = "";
-            document.getElementById('submit-btn').innerText = "Post Listing";
-            loadMyProducts(user.id);
-        };
-
-        window.handleLogout = async () => { await client.auth.signOut(); window.location.href = 'index.html'; };
-        document.addEventListener('DOMContentLoaded', init);
-    </script>
+    <script src="dashboard.js"></script>
+    <script>lucide.createIcons();</script>
 </body>
 </html>
