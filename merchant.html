@@ -13,9 +13,14 @@
         
         .market-card { 
             background: linear-gradient(180deg, #161616 0%, #0c0c0c 100%);
-            border: 2px solid #222; border-radius: 2rem; 
+            border: 2px solid #222; 
+            border-radius: 2rem; 
             transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
-            position: relative; display: flex; flex-direction: column; align-items: center; text-align: center;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
         }
         
         .ql-common { border-color: #d4af37; box-shadow: inset 0 0 15px rgba(212, 175, 55, 0.15); }
@@ -37,6 +42,7 @@
             transition: all 0.3s;
         }
         .inquiry-btn:hover { background: white; color: black; border-color: white; transform: scale(1.1); }
+
         #inquiry-modal { backdrop-filter: blur(8px); background: rgba(0,0,0,0.8); }
     </style>
 </head>
@@ -70,11 +76,13 @@
         <div class="bg-[#111] border border-stone-800 p-8 rounded-3xl max-w-md w-full shadow-2xl">
             <h2 id="modal-title" class="text-white font-black uppercase text-xl mb-2">Inquiry</h2>
             <p id="modal-item-name" class="text-stone-500 text-[10px] font-bold uppercase tracking-widest mb-6"></p>
+            
             <input type="text" id="sender-name" placeholder="Your Character Name" class="w-full bg-stone-900 border border-stone-800 rounded-xl p-3 text-sm text-white mb-4 outline-none focus:border-yellow-600">
             <textarea id="message-body" rows="4" placeholder="Your message or offer..." class="w-full bg-stone-900 border border-stone-800 rounded-xl p-3 text-sm text-white mb-6 outline-none focus:border-yellow-600"></textarea>
+            
             <div class="flex gap-4">
                 <button onclick="closeInquiry()" class="flex-1 px-6 py-3 rounded-xl bg-stone-900 text-stone-500 text-[10px] font-black uppercase hover:text-white transition-all">Cancel</button>
-                <button onclick="sendInquiry()" class="flex-1 px-6 py-3 rounded-xl bg-yellow-600 text-black text-[10px] font-black uppercase hover:bg-white transition-all">Send Inquiry</button>
+                <button id="send-btn" onclick="sendInquiry()" class="flex-1 px-6 py-3 rounded-xl bg-yellow-600 text-black text-[10px] font-black uppercase hover:bg-white transition-all">Send Inquiry</button>
             </div>
         </div>
     </div>
@@ -82,39 +90,38 @@
     <script>
         const { createClient } = supabase;
         const client = createClient('https://gjftmhvteylhtlwcouwg.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdqZnRtaHZ0ZXlsaHRsd2NvdXdnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg5MTg5MDUsImV4cCI6MjA4NDQ5NDkwNX0.SBELcOhXZrm8fWHTaC1Ujjo-ZL7qUelFjxs7hmWGY5k');
+
         const params = new URLSearchParams(window.location.search);
         const merchantId = params.get('id');
         let activeItem = null;
 
         async function init() {
             if (!merchantId) { window.location.href = 'index.html'; return; }
+            
             const { data: profile } = await client.from('profiles').select('*').eq('id', merchantId).single();
             if (profile) {
                 document.getElementById('merchant-name').innerText = profile.character_name;
                 document.getElementById('merchant-server').innerText = profile.server_name;
                 document.getElementById('merchant-bio').innerText = profile.bio || "No description provided.";
             }
+
             const { data: items } = await client.from('products').select('*').eq('seller_id', merchantId);
             renderInventory(items || []);
         }
 
         function getIcon(cat) {
-            const map = { 
-                'Tools': 'hammer', 'Armor': 'shield', 'Weapons': 'swords', 'Resources': 'box', 
-                'Jewelry': 'gem', 'Bulk Goods': 'layers', 'Alchemy': 'flask-conical',
-                'Ship Building': 'anchor', 'Decorations': 'flower-2', 'Machines': 'cog',
-                'Bred Animals': 'dog', 'Food & Drink': 'utensils', 'Enchantments': 'sparkles',
-                'Affinity Items': 'heart', 'Rare Skins': 'palette'
-            };
+            const map = { 'Tools': 'hammer', 'Armor': 'shield', 'Weapons': 'swords', 'Resources': 'box', 'Bred Animals': 'dog' };
             return map[cat] || 'package';
         }
 
         function renderInventory(items) {
             const container = document.getElementById('merchant-inventory');
             container.innerHTML = items.map(item => {
-                const rar = (item.rarity || 'Common').toLowerCase();
-                const qlClass = `ql-${rar}`;
-                const qlColor = rar === 'fantastic' ? 'text-[#ec4899]' : rar === 'supreme' ? 'text-[#0ea5e9]' : rar === 'rare' ? 'text-[#3b82f6]' : 'text-[#d4af37]';
+                let qlClass = "ql-common";
+                let qlColor = "text-[#d4af37]";
+                if (item.base_ql >= 90) { qlClass = "ql-fantastic"; qlColor = "text-[#ec4899]"; }
+                else if (item.base_ql >= 70) { qlClass = "ql-supreme"; qlColor = "text-[#0ea5e9]"; }
+                else if (item.base_ql >= 50) { qlClass = "ql-rare"; qlColor = "text-[#3b82f6]"; }
 
                 const price = [
                     item.price_g > 0 ? `<span class="text-yellow-500">${item.price_g}g</span>` : '',
@@ -127,19 +134,19 @@
                     <div class="icon-header ${qlColor}">
                         <i data-lucide="${getIcon(item.category)}" class="w-6 h-6"></i>
                     </div>
-                    <h3 class="text-white font-black uppercase text-xl mb-1 tracking-tight">${item.item_name}</h3>
-                    <p class="text-[9px] text-stone-500 font-black uppercase mb-4">${item.category}</p>
+                    <h3 class="text-white font-black uppercase text-xl mb-3 tracking-tight">${item.item_name}</h3>
                     <p class="text-[11px] text-stone-300 font-extrabold uppercase tracking-[0.15em] mb-8">
-                        <span class="${qlColor}">${item.rarity || 'Common'} • QL ${item.base_ql}</span>
+                        <span class="${qlColor}">QL ${item.base_ql}</span>
                     </p>
                     <div class="font-mono text-2xl font-black mb-4">
                         ${price || '<span class="text-stone-800 text-sm italic">Taking Offers</span>'}
                     </div>
-                    <button onclick="openInquiry('${item.item_name}', '${item.id}')" class="inquiry-btn">
+                    
+                    <button onclick="openInquiry('${item.item_name.replace(/'/g, "\\'")}', '${item.id}')" class="inquiry-btn">
                         <i data-lucide="mail" class="w-4 h-4"></i>
                     </button>
-                </div>`;
-            }).join('');
+                </div>
+            `}).join('');
             lucide.createIcons();
         }
 
@@ -148,23 +155,43 @@
             document.getElementById('modal-item-name').innerText = `Regarding: ${itemName}`;
             document.getElementById('inquiry-modal').classList.remove('hidden');
         };
-        window.closeInquiry = () => { document.getElementById('inquiry-modal').classList.add('hidden'); };
+
+        window.closeInquiry = () => {
+            document.getElementById('inquiry-modal').classList.add('hidden');
+            document.getElementById('sender-name').value = '';
+            document.getElementById('message-body').value = '';
+        };
 
         window.sendInquiry = async () => {
             const sender = document.getElementById('sender-name').value;
             const message = document.getElementById('message-body').value;
+            const btn = document.getElementById('send-btn');
+
             if (!sender || !message) { alert("Please fill in both fields."); return; }
+
+            btn.disabled = true;
+            btn.innerText = "Sending...";
 
             const { error } = await client.from('inquiries').insert([{
                 seller_id: merchantId,
-                product_id: activeItem.id,
+                product_id: parseInt(activeItem.id), // Fixed: Ensured BIGINT compatibility
+                item_name: activeItem.name,          // Fixed: Added required NOT NULL field
                 sender_name: sender,
-                message: `[Item: ${activeItem.name}] - ${message}`
+                message: message
             }]);
 
-            if (!error) { alert("Inquiry sent!"); closeInquiry(); }
-            else { alert("Error: " + error.message); }
+            if (!error) {
+                alert("Inquiry sent to merchant!");
+                closeInquiry();
+            } else {
+                console.error(error);
+                alert("Error sending inquiry: " + error.message);
+            }
+            
+            btn.disabled = false;
+            btn.innerText = "Send Inquiry";
         };
+
         init();
     </script>
 </body>
