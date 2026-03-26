@@ -6,18 +6,74 @@ const client = createClient(_url, _key);
 async function initDashboard() {
     const { data: { user } } = await client.auth.getUser();
     if (!user) { window.location.href = 'login.html'; return; }
+    
     loadProfile(user.id);
     loadMyItems(user.id);
+    loadInquiries(user.id); // NEW: Load buyer messages
 }
 
-// PROFILE MANAGEMENT
+// --- INBOX MANAGEMENT ---
+
+async function loadInquiries(userId) {
+    // Fetches inquiries that haven't been archived, newest first
+    const { data, error } = await client
+        .from('inquiries')
+        .select('*')
+        .eq('seller_id', userId)
+        .eq('is_archived', false)
+        .order('created_at', { ascending: false });
+
+    const inbox = document.getElementById('merchant-inbox');
+    if (!inbox) return;
+
+    if (!data || data.length === 0) {
+        inbox.innerHTML = `<p class="text-stone-700 italic text-xs py-8 text-center border border-dashed border-stone-900 rounded-2xl">No new messages in your inbox.</p>`;
+        return;
+    }
+
+    inbox.innerHTML = data.map(msg => `
+        <div class="bg-[#111] border border-stone-800 p-5 rounded-2xl flex justify-between items-center group hover:border-stone-600 transition-all">
+            <div>
+                <div class="flex items-center gap-2 mb-1">
+                    <span class="text-yellow-600 font-black text-[10px] uppercase tracking-wider">${msg.sender_name}</span>
+                    <span class="text-stone-600 text-[9px]">${new Date(msg.created_at).toLocaleString()}</span>
+                </div>
+                <p class="text-white text-sm font-bold mb-1">Item: ${msg.item_name}</p>
+                <p class="text-stone-400 text-xs italic leading-relaxed">"${msg.message}"</p>
+            </div>
+            <button onclick="archiveInquiry(${msg.id})" class="p-3 text-stone-700 hover:text-red-500 hover:bg-red-500/10 rounded-xl transition-all" title="Archive Message">
+                <i data-lucide="trash-2" class="w-4 h-4"></i>
+            </button>
+        </div>
+    `).join('');
+    
+    // Refresh Lucide icons for the newly injected HTML
+    lucide.createIcons();
+}
+
+window.archiveInquiry = async (id) => {
+    // Instead of deleting, we set is_archived to true to hide it
+    const { error } = await client
+        .from('inquiries')
+        .update({ is_archived: true })
+        .eq('id', id);
+
+    if (!error) {
+        const { data: { user } } = await client.auth.getUser();
+        loadInquiries(user.id);
+    } else {
+        alert("Error archiving message: " + error.message);
+    }
+};
+
+// --- PROFILE MANAGEMENT ---
+
 async function loadProfile(userId) {
     const { data } = await client.from('profiles').select('*').eq('id', userId).single();
     if (data) {
         document.getElementById('char-name').value = data.character_name || '';
         document.getElementById('char-server').value = data.server_name || 'Cadence';
         document.getElementById('char-bio').value = data.bio || '';
-        // NEW: Load the Discord ID into the field
         if(document.getElementById('discord-id')) {
             document.getElementById('discord-id').value = data.discord_id || '';
         }
@@ -32,7 +88,6 @@ window.saveProfile = async () => {
         character_name: document.getElementById('char-name').value,
         server_name: document.getElementById('char-server').value,
         bio: document.getElementById('char-bio').value,
-        // NEW: Include Discord ID in the save
         discord_id: document.getElementById('discord-id').value 
     };
 
@@ -40,7 +95,8 @@ window.saveProfile = async () => {
     alert(error ? error.message : "Profile & Discord settings updated!");
 };
 
-// INVENTORY MANAGEMENT
+// --- INVENTORY MANAGEMENT ---
+
 window.handleFormSubmit = async (e) => {
     e.preventDefault();
     const { data: { user } } = await client.auth.getUser();
@@ -117,19 +173,21 @@ async function loadMyItems(userId) {
         else if (item.rarity === 'Rare') rarColor = "text-[#3b82f6]";
 
         return `
-        <div class="flex justify-between items-center bg-stone-900/40 p-5 rounded-2xl border border-stone-900">
+        <div class="flex justify-between items-center bg-stone-900/40 p-5 rounded-2xl border border-stone-900 hover:border-stone-700 transition-all">
             <div>
                 <span class="text-white font-bold text-sm">${item.item_name}</span>
                 <span class="${rarColor} ml-2 font-black uppercase text-[9px] tracking-tighter">${item.rarity || 'Common'} • QL ${item.base_ql}</span>
                 <p class="text-[9px] text-stone-500 uppercase mt-1">Stock: ${item.quantity} • ${item.price_g}g ${item.price_s}s ${item.price_c}c</p>
             </div>
             <div class="flex gap-4">
-                <button onclick="startEdit(${item.id})" class="text-stone-400 hover:text-white text-[9px] font-black uppercase">Edit</button>
-                <button onclick="deleteItem(${item.id})" class="text-red-900 hover:text-red-500 text-[9px] font-black uppercase">Remove</button>
+                <button onclick="startEdit(${item.id})" class="text-stone-400 hover:text-white text-[9px] font-black uppercase tracking-widest">Edit</button>
+                <button onclick="deleteItem(${item.id})" class="text-red-900 hover:text-red-500 text-[9px] font-black uppercase tracking-widest">Remove</button>
             </div>
         </div>`;
     }).join('') || "<p class='text-stone-700 italic text-center py-10 text-xs'>No active listings.</p>";
 }
 
 window.signOut = async () => { await client.auth.signOut(); window.location.href = 'login.html'; };
+
+// Initial Boot
 initDashboard();
