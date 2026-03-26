@@ -11,6 +11,7 @@
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
         body { background-color: #0b0b0b; color: #e5d5b5; font-family: 'Inter', sans-serif; }
         
+        /* 3D Product Card Styles */
         .market-card { 
             background: linear-gradient(180deg, #161616 0%, #0c0c0c 100%);
             border: 2px solid #222; 
@@ -27,6 +28,7 @@
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
         }
         
+        /* Luminous Borders based on QL/Rarity */
         .ql-common { border-color: #d4af37; box-shadow: inset 0 0 15px rgba(212, 175, 55, 0.15), 0 0 20px rgba(212, 175, 55, 0.05); }
         .ql-rare { border-color: #3b82f6; box-shadow: inset 0 0 15px rgba(59, 130, 246, 0.2), 0 0 20px rgba(59, 130, 246, 0.1); }
         .ql-supreme { border-color: #0ea5e9; box-shadow: inset 0 0 15px rgba(14, 165, 233, 0.2), 0 0 20px rgba(14, 165, 233, 0.1); }
@@ -49,7 +51,6 @@
             box-shadow: 0 10px 20px rgba(0,0,0,0.4);
         }
 
-        /* Modal Backdrop */
         #inquiry-modal { backdrop-filter: blur(8px); background: rgba(0,0,0,0.8); }
     </style>
 </head>
@@ -69,7 +70,6 @@
 
     <main class="flex-1 p-16">
         <div class="max-w-7xl mx-auto">
-            
             <div class="mb-20 grid grid-cols-1 md:grid-cols-4 gap-4 bg-[#141414] p-6 rounded-2xl border border-stone-900 shadow-2xl">
                 <input type="text" id="search-item" class="search-input" placeholder="Product Name">
                 <input type="text" id="search-seller" class="search-input" placeholder="Seller Name">
@@ -96,25 +96,32 @@
 
     <div id="inquiry-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-6">
         <div class="bg-[#111] border border-stone-800 w-full max-w-md rounded-3xl p-8 shadow-2xl">
-            <h2 class="text-white font-black uppercase text-xl mb-2 tracking-tighter">Send Inquiry</h2>
-            <p id="modal-item-display" class="text-yellow-600 text-[10px] font-black uppercase tracking-widest mb-6 border-b border-stone-900 pb-4"></p>
+            <div class="flex items-center gap-3 mb-6">
+                <div class="p-3 bg-yellow-600/10 rounded-2xl">
+                    <i data-lucide="message-square" class="w-6 h-6 text-yellow-600"></i>
+                </div>
+                <div>
+                    <h2 class="text-white font-black uppercase text-xl tracking-tighter">Send Message</h2>
+                    <p id="modal-item-display" class="text-stone-500 text-[9px] font-black uppercase tracking-widest"></p>
+                </div>
+            </div>
             
             <form id="inquiry-form" class="space-y-4">
                 <input type="hidden" id="target-seller-id">
                 <input type="hidden" id="target-item-name">
                 
                 <div>
-                    <label class="text-[9px] font-black text-stone-500 uppercase block mb-1">Your Character Name</label>
-                    <input type="text" id="sender-name" class="search-input" placeholder="Wurm Name" required>
+                    <label class="text-[9px] font-black text-stone-600 uppercase block mb-1">Your Character Name</label>
+                    <input type="text" id="sender-name" class="search-input" placeholder="e.g. Nefig" required>
                 </div>
                 <div>
-                    <label class="text-[9px] font-black text-stone-500 uppercase block mb-1">Message</label>
-                    <textarea id="sender-msg" class="search-input h-32" placeholder="Tell the merchant what you're looking for..." required></textarea>
+                    <label class="text-[9px] font-black text-stone-600 uppercase block mb-1">Your Message</label>
+                    <textarea id="sender-msg" class="search-input h-32 text-xs" placeholder="I'd like to buy this! Where can we meet?" required></textarea>
                 </div>
                 
                 <div class="flex gap-3 pt-4">
-                    <button type="button" onclick="closeInquiry()" class="flex-1 py-4 text-stone-500 text-[10px] font-black uppercase">Cancel</button>
-                    <button type="submit" class="flex-1 py-4 bg-yellow-600 text-black text-[10px] font-black uppercase rounded-2xl hover:bg-white transition-all">Send Message</button>
+                    <button type="button" onclick="closeInquiry()" class="flex-1 py-4 text-stone-500 text-[10px] font-black uppercase hover:text-white transition-all">Cancel</button>
+                    <button type="submit" class="flex-1 py-4 bg-yellow-600 text-black text-[10px] font-black uppercase rounded-2xl hover:bg-white transition-all shadow-lg shadow-yellow-900/20">Send via Bot</button>
                 </div>
             </form>
         </div>
@@ -127,7 +134,7 @@
         let allItems = [];
 
         async function loadMarket() {
-            const { data: items, error } = await client.from('products').select(`*, profiles(character_name, server_name, discord_id)`);
+            const { data: items, error } = await client.from('products').select(`*, profiles(character_name, server_name)`);
             if (error) return;
             allItems = items;
             renderMarket(allItems);
@@ -172,23 +179,15 @@
                         ${price || '<span class="text-stone-800 text-sm italic">Taking Offers</span>'}
                     </div>
 
-                    <div class="w-full pt-6 border-t border-stone-900/50 flex flex-col gap-4 mt-auto">
-                        <div class="flex justify-between items-center">
-                            <div class="text-left">
-                                <span class="block text-[8px] font-black text-stone-700 uppercase mb-1">Merchant</span>
-                                <span class="text-[10px] font-black text-stone-400 uppercase tracking-tighter">${item.profiles?.character_name || 'Unknown'}</span>
-                            </div>
-                            <div class="flex gap-2">
-                                <button onclick="openInquiry('${item.seller_id}', '${item.item_name}')" class="p-2.5 bg-stone-900 border border-stone-800 text-white rounded-xl hover:bg-white hover:text-black transition-all">
-                                    <i data-lucide="mail" class="w-4 h-4"></i>
-                                </button>
-                                ${item.profiles?.discord_id ? `
-                                <button onclick="window.open('https://discord.com/users/${item.profiles.discord_id}', '_blank')" class="p-2.5 bg-[#5865F2]/10 border border-[#5865F2]/20 text-[#5865F2] rounded-xl hover:bg-[#5865F2] hover:text-white transition-all">
-                                    <i data-lucide="message-square" class="w-4 h-4"></i>
-                                </button>
-                                ` : ''}
-                            </div>
+                    <div class="w-full pt-6 border-t border-stone-900/50 flex justify-between items-center mt-auto">
+                        <div class="text-left">
+                            <span class="block text-[8px] font-black text-stone-700 uppercase mb-1">Merchant</span>
+                            <span class="text-[10px] font-black text-stone-400 uppercase tracking-tighter">${item.profiles?.character_name || 'Unknown'}</span>
                         </div>
+                        <button onclick="openInquiry('${item.seller_id}', '${item.item_name}')" 
+                            class="bg-stone-900 border border-stone-800 text-white p-3 rounded-xl hover:bg-yellow-600 hover:text-black transition-all">
+                            <i data-lucide="mail" class="w-4 h-4"></i>
+                        </button>
                     </div>
                 </div>
             `}).join('');
@@ -220,7 +219,7 @@
 
             const { error } = await client.from('inquiries').insert([payload]);
             if (!error) {
-                alert("Inquiry sent to merchant!");
+                alert("Inquiry sent to merchant via bot!");
                 closeInquiry();
             } else {
                 alert("Error sending inquiry: " + error.message);
