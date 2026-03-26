@@ -11,7 +11,6 @@
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
         body { background-color: #0b0b0b; color: #e5d5b5; font-family: 'Inter', sans-serif; }
         
-        /* 3D Product Card Styles */
         .market-card { 
             background: linear-gradient(180deg, #161616 0%, #0c0c0c 100%);
             border: 2px solid #222; 
@@ -28,7 +27,6 @@
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
         }
         
-        /* 3D Luminous Borders */
         .ql-common { border-color: #d4af37; box-shadow: inset 0 0 15px rgba(212, 175, 55, 0.15), 0 0 20px rgba(212, 175, 55, 0.05); }
         .ql-rare { border-color: #3b82f6; box-shadow: inset 0 0 15px rgba(59, 130, 246, 0.2), 0 0 20px rgba(59, 130, 246, 0.1); }
         .ql-supreme { border-color: #0ea5e9; box-shadow: inset 0 0 15px rgba(14, 165, 233, 0.2), 0 0 20px rgba(14, 165, 233, 0.1); }
@@ -50,6 +48,9 @@
             margin-bottom: 20px;
             box-shadow: 0 10px 20px rgba(0,0,0,0.4);
         }
+
+        /* Modal Backdrop */
+        #inquiry-modal { backdrop-filter: blur(8px); background: rgba(0,0,0,0.8); }
     </style>
 </head>
 <body class="flex min-h-screen">
@@ -62,9 +63,6 @@
             </a>
             <a href="dashboard.html" class="flex items-center gap-3 text-stone-500 hover:text-white transition-all font-bold uppercase text-[10px] tracking-widest">
                 <i data-lucide="layout-dashboard" class="w-4 h-4"></i> Merchant Portal
-            </a>
-            <a href="login.html" class="flex items-center gap-3 text-stone-500 hover:text-white transition-all font-bold uppercase text-[10px] tracking-widest">
-                <i data-lucide="log-in" class="w-4 h-4"></i> Sign In
             </a>
         </nav>
     </aside>
@@ -92,10 +90,35 @@
                 </select>
             </div>
 
-            <div id="market-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-y-16 gap-x-8">
-                </div>
+            <div id="market-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-y-16 gap-x-8"></div>
         </div>
     </main>
+
+    <div id="inquiry-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-6">
+        <div class="bg-[#111] border border-stone-800 w-full max-w-md rounded-3xl p-8 shadow-2xl">
+            <h2 class="text-white font-black uppercase text-xl mb-2 tracking-tighter">Send Inquiry</h2>
+            <p id="modal-item-display" class="text-yellow-600 text-[10px] font-black uppercase tracking-widest mb-6 border-b border-stone-900 pb-4"></p>
+            
+            <form id="inquiry-form" class="space-y-4">
+                <input type="hidden" id="target-seller-id">
+                <input type="hidden" id="target-item-name">
+                
+                <div>
+                    <label class="text-[9px] font-black text-stone-500 uppercase block mb-1">Your Character Name</label>
+                    <input type="text" id="sender-name" class="search-input" placeholder="Wurm Name" required>
+                </div>
+                <div>
+                    <label class="text-[9px] font-black text-stone-500 uppercase block mb-1">Message</label>
+                    <textarea id="sender-msg" class="search-input h-32" placeholder="Tell the merchant what you're looking for..." required></textarea>
+                </div>
+                
+                <div class="flex gap-3 pt-4">
+                    <button type="button" onclick="closeInquiry()" class="flex-1 py-4 text-stone-500 text-[10px] font-black uppercase">Cancel</button>
+                    <button type="submit" class="flex-1 py-4 bg-yellow-600 text-black text-[10px] font-black uppercase rounded-2xl hover:bg-white transition-all">Send Message</button>
+                </div>
+            </form>
+        </div>
+    </div>
 
     <script>
         const { createClient } = supabase;
@@ -104,7 +127,7 @@
         let allItems = [];
 
         async function loadMarket() {
-            const { data: items, error } = await client.from('products').select(`*, profiles(character_name, server_name)`);
+            const { data: items, error } = await client.from('products').select(`*, profiles(character_name, server_name, discord_id)`);
             if (error) return;
             allItems = items;
             renderMarket(allItems);
@@ -127,7 +150,8 @@
                 const price = [
                     item.price_g > 0 ? `<span class="text-yellow-500">${item.price_g}g</span>` : '',
                     item.price_s > 0 ? `<span class="text-stone-300">${item.price_s}s</span>` : '',
-                    item.price_c > 0 ? `<span class="text-orange-600">${item.price_c}c</span>` : ''
+                    item.price_c > 0 ? `<span class="text-orange-600">${item.price_c}c</span>` : '',
+                    item.price_i > 0 ? `<span class="text-blue-300">${item.price_i}i</span>` : ''
                 ].filter(p => p !== "").join(' ');
 
                 return `
@@ -148,19 +172,60 @@
                         ${price || '<span class="text-stone-800 text-sm italic">Taking Offers</span>'}
                     </div>
 
-                    <div class="w-full pt-6 border-t border-stone-900/50 flex justify-between items-center mt-auto">
-                        <div class="text-left">
-                            <span class="block text-[8px] font-black text-stone-700 uppercase mb-1">Merchant</span>
-                            <span class="text-[10px] font-black text-stone-400 uppercase tracking-tighter">${item.profiles?.character_name || 'Unknown'}</span>
+                    <div class="w-full pt-6 border-t border-stone-900/50 flex flex-col gap-4 mt-auto">
+                        <div class="flex justify-between items-center">
+                            <div class="text-left">
+                                <span class="block text-[8px] font-black text-stone-700 uppercase mb-1">Merchant</span>
+                                <span class="text-[10px] font-black text-stone-400 uppercase tracking-tighter">${item.profiles?.character_name || 'Unknown'}</span>
+                            </div>
+                            <div class="flex gap-2">
+                                <button onclick="openInquiry('${item.seller_id}', '${item.item_name}')" class="p-2.5 bg-stone-900 border border-stone-800 text-white rounded-xl hover:bg-white hover:text-black transition-all">
+                                    <i data-lucide="mail" class="w-4 h-4"></i>
+                                </button>
+                                ${item.profiles?.discord_id ? `
+                                <button onclick="window.open('https://discord.com/users/${item.profiles.discord_id}', '_blank')" class="p-2.5 bg-[#5865F2]/10 border border-[#5865F2]/20 text-[#5865F2] rounded-xl hover:bg-[#5865F2] hover:text-white transition-all">
+                                    <i data-lucide="message-square" class="w-4 h-4"></i>
+                                </button>
+                                ` : ''}
+                            </div>
                         </div>
-                        <a href="merchant.html?id=${item.seller_id}" class="bg-stone-900 border border-stone-800 text-white text-[9px] font-black uppercase px-5 py-2.5 rounded-xl hover:bg-white hover:text-black transition-all">
-                            View Shop
-                        </a>
                     </div>
                 </div>
             `}).join('');
             lucide.createIcons();
         }
+
+        // Inquiry Modal Logic
+        window.openInquiry = (sellerId, itemName) => {
+            document.getElementById('target-seller-id').value = sellerId;
+            document.getElementById('target-item-name').value = itemName;
+            document.getElementById('modal-item-display').innerText = `Item: ${itemName}`;
+            document.getElementById('inquiry-modal').classList.replace('hidden', 'flex');
+        };
+
+        window.closeInquiry = () => {
+            document.getElementById('inquiry-modal').classList.replace('flex', 'hidden');
+            document.getElementById('inquiry-form').reset();
+        };
+
+        document.getElementById('inquiry-form').onsubmit = async (e) => {
+            e.preventDefault();
+            const payload = {
+                seller_id: document.getElementById('target-seller-id').value,
+                item_name: document.getElementById('target-item-name').value,
+                sender_name: document.getElementById('sender-name').value,
+                message: document.getElementById('sender-msg').value,
+                is_archived: false
+            };
+
+            const { error } = await client.from('inquiries').insert([payload]);
+            if (!error) {
+                alert("Inquiry sent to merchant!");
+                closeInquiry();
+            } else {
+                alert("Error sending inquiry: " + error.message);
+            }
+        };
 
         const filter = () => {
             const i = document.getElementById('search-item').value.toLowerCase();
