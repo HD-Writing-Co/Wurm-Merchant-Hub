@@ -9,13 +9,11 @@ async function initDashboard() {
     
     loadProfile(user.id);
     loadMyItems(user.id);
-    loadInquiries(user.id); // NEW: Load buyer messages
+    loadInquiries(user.id);
 }
 
 // --- INBOX MANAGEMENT ---
-
 async function loadInquiries(userId) {
-    // Fetches inquiries that haven't been archived, newest first
     const { data, error } = await client
         .from('inquiries')
         .select('*')
@@ -41,33 +39,23 @@ async function loadInquiries(userId) {
                 <p class="text-white text-sm font-bold mb-1">Item: ${msg.item_name}</p>
                 <p class="text-stone-400 text-xs italic leading-relaxed">"${msg.message}"</p>
             </div>
-            <button onclick="archiveInquiry(${msg.id})" class="p-3 text-stone-700 hover:text-red-500 hover:bg-red-500/10 rounded-xl transition-all" title="Archive Message">
+            <button onclick="archiveInquiry(${msg.id})" class="p-3 text-stone-700 hover:text-red-500 hover:bg-red-500/10 rounded-xl transition-all">
                 <i data-lucide="trash-2" class="w-4 h-4"></i>
             </button>
         </div>
     `).join('');
-    
-    // Refresh Lucide icons for the newly injected HTML
     lucide.createIcons();
 }
 
 window.archiveInquiry = async (id) => {
-    // Instead of deleting, we set is_archived to true to hide it
-    const { error } = await client
-        .from('inquiries')
-        .update({ is_archived: true })
-        .eq('id', id);
-
+    const { error } = await client.from('inquiries').update({ is_archived: true }).eq('id', id);
     if (!error) {
         const { data: { user } } = await client.auth.getUser();
         loadInquiries(user.id);
-    } else {
-        alert("Error archiving message: " + error.message);
     }
 };
 
 // --- PROFILE MANAGEMENT ---
-
 async function loadProfile(userId) {
     const { data } = await client.from('profiles').select('*').eq('id', userId).single();
     if (data) {
@@ -82,7 +70,6 @@ async function loadProfile(userId) {
 
 window.saveProfile = async () => {
     const { data: { user } } = await client.auth.getUser();
-    
     const payload = {
         id: user.id,
         character_name: document.getElementById('char-name').value,
@@ -90,13 +77,11 @@ window.saveProfile = async () => {
         bio: document.getElementById('char-bio').value,
         discord_id: document.getElementById('discord-id').value 
     };
-
     const { error } = await client.from('profiles').upsert(payload);
-    alert(error ? error.message : "Profile & Discord settings updated!");
+    alert(error ? error.message : "Profile updated!");
 };
 
 // --- INVENTORY MANAGEMENT ---
-
 window.handleFormSubmit = async (e) => {
     e.preventDefault();
     const { data: { user } } = await client.auth.getUser();
@@ -107,11 +92,12 @@ window.handleFormSubmit = async (e) => {
         item_name: document.getElementById('item-name').value,
         category: document.getElementById('item-cat').value,
         rarity: document.getElementById('item-rarity').value,
-        base_ql: parseInt(document.getElementById('item-ql').value) || 0,
+        base_ql: parseFloat(document.getElementById('item-ql').value) || 0,
         quantity: parseInt(document.getElementById('item-qty').value) || 1,
         price_g: parseInt(document.getElementById('price-g').value) || 0,
         price_s: parseInt(document.getElementById('price-s').value) || 0,
-        price_c: parseInt(document.getElementById('price-c').value) || 0
+        price_c: parseInt(document.getElementById('price-c').value) || 0,
+        price_i: parseInt(document.getElementById('price-i').value) || 0 // Added Iron
     };
 
     const { error } = itemId 
@@ -120,18 +106,6 @@ window.handleFormSubmit = async (e) => {
 
     if (!error) { resetForm(); loadMyItems(user.id); }
     else alert(error.message);
-};
-
-window.deleteItem = async (itemId) => {
-    if (confirm("Remove this listing?")) {
-        const { error } = await client.from('products').delete().eq('id', itemId);
-        if (!error) {
-            const { data: { user } } = await client.auth.getUser();
-            loadMyItems(user.id);
-        } else {
-            alert(error.message);
-        }
-    }
 };
 
 window.startEdit = async (itemId) => {
@@ -147,19 +121,12 @@ window.startEdit = async (itemId) => {
     document.getElementById('price-g').value = data.price_g;
     document.getElementById('price-s').value = data.price_s;
     document.getElementById('price-c').value = data.price_c;
+    document.getElementById('price-i').value = data.price_i || 0; // Load Iron
 
     document.getElementById('form-title').innerText = "Edit Listing";
     document.getElementById('submit-btn').innerText = "Update Listing";
     document.getElementById('cancel-edit').classList.remove('hidden');
     window.scrollTo({ top: 0, behavior: 'smooth' });
-};
-
-window.resetForm = () => {
-    document.getElementById('add-item-form').reset();
-    document.getElementById('edit-item-id').value = "";
-    document.getElementById('form-title').innerText = "Add New Listing";
-    document.getElementById('submit-btn').innerText = "List Item on Hub";
-    document.getElementById('cancel-edit').classList.add('hidden');
 };
 
 async function loadMyItems(userId) {
@@ -177,7 +144,10 @@ async function loadMyItems(userId) {
             <div>
                 <span class="text-white font-bold text-sm">${item.item_name}</span>
                 <span class="${rarColor} ml-2 font-black uppercase text-[9px] tracking-tighter">${item.rarity || 'Common'} • QL ${item.base_ql}</span>
-                <p class="text-[9px] text-stone-500 uppercase mt-1">Stock: ${item.quantity} • ${item.price_g}g ${item.price_s}s ${item.price_c}c</p>
+                <p class="text-[9px] text-stone-500 uppercase mt-1">
+                    Stock: ${item.quantity} • 
+                    ${item.price_g}g ${item.price_s}s ${item.price_c}c ${item.price_i > 0 ? item.price_i + 'i' : ''}
+                </p>
             </div>
             <div class="flex gap-4">
                 <button onclick="startEdit(${item.id})" class="text-stone-400 hover:text-white text-[9px] font-black uppercase tracking-widest">Edit</button>
@@ -187,7 +157,23 @@ async function loadMyItems(userId) {
     }).join('') || "<p class='text-stone-700 italic text-center py-10 text-xs'>No active listings.</p>";
 }
 
-window.signOut = async () => { await client.auth.signOut(); window.location.href = 'login.html'; };
+window.resetForm = () => {
+    document.getElementById('add-item-form').reset();
+    document.getElementById('edit-item-id').value = "";
+    document.getElementById('form-title').innerText = "Add New Listing";
+    document.getElementById('submit-btn').innerText = "List Item on Hub";
+    document.getElementById('cancel-edit').classList.add('hidden');
+};
 
-// Initial Boot
+window.deleteItem = async (itemId) => {
+    if (confirm("Remove this listing?")) {
+        const { error } = await client.from('products').delete().eq('id', itemId);
+        if (!error) {
+            const { data: { user } } = await client.auth.getUser();
+            loadMyItems(user.id);
+        }
+    }
+};
+
+window.signOut = async () => { await client.auth.signOut(); window.location.href = 'login.html'; };
 initDashboard();
