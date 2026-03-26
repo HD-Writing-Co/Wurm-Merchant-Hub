@@ -12,7 +12,8 @@ async function initDashboard() {
     loadInquiries(user.id);
 }
 
-// --- INBOX MANAGEMENT ---
+// --- INBOX / FORUM MANAGEMENT ---
+
 async function loadInquiries(userId) {
     const { data, error } = await client
         .from('inquiries')
@@ -25,51 +26,51 @@ async function loadInquiries(userId) {
     if (!inbox) return;
 
     if (!data || data.length === 0) {
-        inbox.innerHTML = `<p class="text-stone-700 italic text-xs py-8 text-center border border-dashed border-stone-900 rounded-2xl">No new messages in your inbox.</p>`;
+        inbox.innerHTML = `<p class="text-stone-700 italic text-xs py-12 text-center">No active inquiries at this time.</p>`;
         return;
     }
 
     inbox.innerHTML = data.map(msg => `
-        <div class="bg-[#111] border border-stone-800 p-5 rounded-2xl flex justify-between items-center group hover:border-stone-600 transition-all">
-            <div>
-                <div class="flex items-center gap-2 mb-1">
-                    <span class="text-yellow-600 font-black text-[10px] uppercase tracking-wider">${msg.sender_name}</span>
-                    <span class="text-stone-600 text-[9px]">${new Date(msg.created_at).toLocaleString()}</span>
+        <div class="forum-post p-6 mb-2 rounded-r-2xl border-b border-stone-900/50 hover:bg-stone-900/20 transition-all">
+            <div class="flex justify-between items-start mb-3">
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 bg-stone-900 rounded-full flex items-center justify-center text-yellow-600 font-black text-xs">
+                        ${msg.sender_name ? msg.sender_name.charAt(0).toUpperCase() : '?'}
+                    </div>
+                    <div>
+                        <span class="text-white font-black text-[11px] uppercase tracking-widest">${msg.sender_name}</span>
+                        <p class="text-stone-600 text-[9px] font-medium">${new Date(msg.created_at).toLocaleString()}</p>
+                    </div>
                 </div>
-                <p class="text-white text-sm font-bold mb-1">Item: ${msg.item_name}</p>
-                <p class="text-stone-400 text-xs italic leading-relaxed">"${msg.message}"</p>
+                <span class="bg-yellow-600/10 text-yellow-600 text-[8px] font-black px-2 py-1 rounded uppercase">Inquiry</span>
             </div>
-            <button onclick="archiveInquiry(${msg.id})" class="p-3 text-stone-700 hover:text-red-500 hover:bg-red-500/10 rounded-xl transition-all">
-                <i data-lucide="trash-2" class="w-4 h-4"></i>
-            </button>
+            <div class="pl-11">
+                <p class="text-stone-500 text-[10px] uppercase font-bold mb-1">Subject: ${msg.item_name}</p>
+                <p class="text-stone-300 text-sm leading-relaxed border-t border-stone-900/50 pt-3 mt-2">
+                    ${msg.message}
+                </p>
+            </div>
         </div>
     `).join('');
-    lucide.createIcons();
+    
+    if (window.lucide) lucide.createIcons();
 }
 
-window.archiveInquiry = async (id) => {
-    const { error } = await client.from('inquiries').update({ is_archived: true }).eq('id', id);
-    if (!error) {
-        const { data: { user } } = await client.auth.getUser();
-        loadInquiries(user.id);
-    }
-};
-
 // --- PROFILE MANAGEMENT ---
+
 async function loadProfile(userId) {
     const { data } = await client.from('profiles').select('*').eq('id', userId).single();
     if (data) {
-        document.getElementById('char-name').value = data.character_name || '';
-        document.getElementById('char-server').value = data.server_name || 'Cadence';
-        document.getElementById('char-bio').value = data.bio || '';
-        if(document.getElementById('discord-id')) {
-            document.getElementById('discord-id').value = data.discord_id || '';
-        }
+        if(document.getElementById('char-name')) document.getElementById('char-name').value = data.character_name || '';
+        if(document.getElementById('char-server')) document.getElementById('char-server').value = data.server_name || 'Cadence';
+        if(document.getElementById('char-bio')) document.getElementById('char-bio').value = data.bio || '';
+        if(document.getElementById('discord-id')) document.getElementById('discord-id').value = data.discord_id || '';
     }
 }
 
 window.saveProfile = async () => {
     const { data: { user } } = await client.auth.getUser();
+    
     const payload = {
         id: user.id,
         character_name: document.getElementById('char-name').value,
@@ -77,11 +78,13 @@ window.saveProfile = async () => {
         bio: document.getElementById('char-bio').value,
         discord_id: document.getElementById('discord-id').value 
     };
+
     const { error } = await client.from('profiles').upsert(payload);
-    alert(error ? error.message : "Profile updated!");
+    alert(error ? error.message : "Profile settings updated!");
 };
 
 // --- INVENTORY MANAGEMENT ---
+
 window.handleFormSubmit = async (e) => {
     e.preventDefault();
     const { data: { user } } = await client.auth.getUser();
@@ -97,15 +100,19 @@ window.handleFormSubmit = async (e) => {
         price_g: parseInt(document.getElementById('price-g').value) || 0,
         price_s: parseInt(document.getElementById('price-s').value) || 0,
         price_c: parseInt(document.getElementById('price-c').value) || 0,
-        price_i: parseInt(document.getElementById('price-i').value) || 0 // Added Iron
+        price_i: parseInt(document.getElementById('price-i').value) || 0
     };
 
     const { error } = itemId 
         ? await client.from('products').update(payload).eq('id', itemId)
         : await client.from('products').insert([payload]);
 
-    if (!error) { resetForm(); loadMyItems(user.id); }
-    else alert(error.message);
+    if (!error) { 
+        resetForm(); 
+        loadMyItems(user.id); 
+    } else {
+        alert(error.message);
+    }
 };
 
 window.startEdit = async (itemId) => {
@@ -121,7 +128,7 @@ window.startEdit = async (itemId) => {
     document.getElementById('price-g').value = data.price_g;
     document.getElementById('price-s').value = data.price_s;
     document.getElementById('price-c').value = data.price_c;
-    document.getElementById('price-i').value = data.price_i || 0; // Load Iron
+    document.getElementById('price-i').value = data.price_i || 0;
 
     document.getElementById('form-title').innerText = "Edit Listing";
     document.getElementById('submit-btn').innerText = "Update Listing";
@@ -132,6 +139,7 @@ window.startEdit = async (itemId) => {
 async function loadMyItems(userId) {
     const { data } = await client.from('products').select('*').eq('seller_id', userId).order('created_at', { ascending: false });
     const container = document.getElementById('my-inventory');
+    if (!container) return;
     
     container.innerHTML = (data || []).map(item => {
         let rarColor = "text-[#d4af37]";
@@ -139,15 +147,16 @@ async function loadMyItems(userId) {
         else if (item.rarity === 'Supreme') rarColor = "text-[#0ea5e9]";
         else if (item.rarity === 'Rare') rarColor = "text-[#3b82f6]";
 
+        // Format price string to include iron if present
+        let priceStr = `${item.price_g}g ${item.price_s}s ${item.price_c}c`;
+        if (item.price_i > 0) priceStr += ` ${item.price_i}i`;
+
         return `
         <div class="flex justify-between items-center bg-stone-900/40 p-5 rounded-2xl border border-stone-900 hover:border-stone-700 transition-all">
             <div>
                 <span class="text-white font-bold text-sm">${item.item_name}</span>
                 <span class="${rarColor} ml-2 font-black uppercase text-[9px] tracking-tighter">${item.rarity || 'Common'} • QL ${item.base_ql}</span>
-                <p class="text-[9px] text-stone-500 uppercase mt-1">
-                    Stock: ${item.quantity} • 
-                    ${item.price_g}g ${item.price_s}s ${item.price_c}c ${item.price_i > 0 ? item.price_i + 'i' : ''}
-                </p>
+                <p class="text-[9px] text-stone-500 uppercase mt-1">Stock: ${item.quantity} • ${priceStr}</p>
             </div>
             <div class="flex gap-4">
                 <button onclick="startEdit(${item.id})" class="text-stone-400 hover:text-white text-[9px] font-black uppercase tracking-widest">Edit</button>
@@ -171,9 +180,16 @@ window.deleteItem = async (itemId) => {
         if (!error) {
             const { data: { user } } = await client.auth.getUser();
             loadMyItems(user.id);
+        } else {
+            alert(error.message);
         }
     }
 };
 
-window.signOut = async () => { await client.auth.signOut(); window.location.href = 'login.html'; };
+window.signOut = async () => { 
+    await client.auth.signOut(); 
+    window.location.href = 'login.html'; 
+};
+
+// Start
 initDashboard();

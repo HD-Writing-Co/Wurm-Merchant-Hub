@@ -29,8 +29,24 @@
         }
 
         .currency-tag {
-            position: absolute; right: 0.75rem; top: 50%; transform: translateY(-50%);
-            font-size: 10px; font-weight: 900; pointer-events: none;
+            position: absolute; right: 0.5rem; top: 50%; transform: translateY(-50%);
+            font-size: 9px; font-weight: 900; pointer-events: none;
+        }
+
+        /* Forum Thread Styling for Inquiries */
+        .inquiry-thread {
+            max-height: 400px;
+            overflow-y: auto;
+            scrollbar-width: thin;
+            scrollbar-color: #222 #0b0b0b;
+        }
+        .inquiry-thread::-webkit-scrollbar { width: 6px; }
+        .inquiry-thread::-webkit-scrollbar-track { background: #0b0b0b; }
+        .inquiry-thread::-webkit-scrollbar-thumb { background: #222; border-radius: 10px; }
+        
+        .forum-post {
+            border-left: 3px solid #d4af37;
+            background: rgba(255,255,255,0.02);
         }
     </style>
 </head>
@@ -78,11 +94,11 @@
 
     <main class="flex-1 p-16 overflow-y-auto">
         
-        <section class="max-w-4xl mx-auto mb-16">
+        <section class="max-w-4xl mx-auto mb-16 bg-[#111]/50 border border-stone-900 rounded-3xl p-8">
             <h2 class="text-white font-black uppercase text-xl tracking-tighter mb-6 flex items-center gap-2">
-                <i data-lucide="inbox" class="w-5 h-5 text-yellow-600"></i> Recent Inquiries
+                <i data-lucide="message-square" class="w-5 h-5 text-yellow-600"></i> Market Inquiries
             </h2>
-            <div id="merchant-inbox" class="grid grid-cols-1 gap-4">
+            <div id="merchant-inbox" class="inquiry-thread pr-4 space-y-1">
                 </div>
         </section>
 
@@ -90,7 +106,7 @@
 
         <div class="flex gap-12 max-w-6xl mx-auto">
             
-            <div class="w-1/3">
+            <div class="w-[360px]">
                 <div class="glass-panel p-8 sticky top-16">
                     <h2 id="form-title" class="text-white font-black uppercase text-xl mb-8 tracking-tighter">Add New Listing</h2>
                     <form id="add-item-form" class="space-y-5" onsubmit="handleFormSubmit(event)">
@@ -127,10 +143,10 @@
                         <div class="grid grid-cols-2 gap-4">
                             <div>
                                 <label class="label-text">Quality (QL)</label>
-                                <input type="number" id="item-ql" placeholder="50" class="search-input">
+                                <input type="number" id="item-ql" step="0.01" placeholder="50.00" class="search-input">
                             </div>
                             <div>
-                                <label class="label-text">Quantity</label>
+                                <label class="label-text">Stock</label>
                                 <input type="number" id="item-qty" placeholder="1" class="search-input">
                             </div>
                         </div>
@@ -139,19 +155,19 @@
                             <label class="label-text">Price (G / S / C / I)</label>
                             <div class="grid grid-cols-4 gap-2">
                                 <div class="relative">
-                                    <input type="number" id="price-g" value="0" class="search-input pr-5">
+                                    <input type="number" id="price-g" value="0" class="search-input !px-2 text-center">
                                     <span class="currency-tag text-yellow-500">G</span>
                                 </div>
                                 <div class="relative">
-                                    <input type="number" id="price-s" value="0" class="search-input pr-5">
+                                    <input type="number" id="price-s" value="0" class="search-input !px-2 text-center">
                                     <span class="currency-tag text-stone-400">S</span>
                                 </div>
                                 <div class="relative">
-                                    <input type="number" id="price-c" value="0" class="search-input pr-5">
+                                    <input type="number" id="price-c" value="0" class="search-input !px-2 text-center">
                                     <span class="currency-tag text-orange-700">C</span>
                                 </div>
                                 <div class="relative">
-                                    <input type="number" id="price-i" value="0" class="search-input pr-5">
+                                    <input type="number" id="price-i" value="0" class="search-input !px-2 text-center">
                                     <span class="currency-tag text-blue-300">I</span>
                                 </div>
                             </div>
@@ -166,7 +182,9 @@
             </div>
 
             <div class="flex-1">
-                <h2 class="text-white font-black uppercase text-3xl tracking-tighter mb-10">Your Inventory</h2>
+                <div class="flex justify-between items-center mb-10">
+                    <h2 class="text-white font-black uppercase text-3xl tracking-tighter">Your Inventory</h2>
+                </div>
                 <div id="my-inventory" class="space-y-4">
                     </div>
             </div>
