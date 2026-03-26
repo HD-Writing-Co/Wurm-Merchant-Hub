@@ -11,7 +11,6 @@
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
         body { background-color: #0b0b0b; color: #e5d5b5; font-family: 'Inter', sans-serif; }
         
-        /* 3D Product Card Styles */
         .market-card { 
             background: linear-gradient(180deg, #161616 0%, #0c0c0c 100%);
             border: 2px solid #222; 
@@ -28,7 +27,6 @@
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
         }
         
-        /* Luminous Borders based on QL/Rarity */
         .ql-common { border-color: #d4af37; box-shadow: inset 0 0 15px rgba(212, 175, 55, 0.15), 0 0 20px rgba(212, 175, 55, 0.05); }
         .ql-rare { border-color: #3b82f6; box-shadow: inset 0 0 15px rgba(59, 130, 246, 0.2), 0 0 20px rgba(59, 130, 246, 0.1); }
         .ql-supreme { border-color: #0ea5e9; box-shadow: inset 0 0 15px rgba(14, 165, 233, 0.2), 0 0 20px rgba(14, 165, 233, 0.1); }
@@ -59,10 +57,10 @@
     <aside class="w-72 bg-[#0f0f0f] border-r border-stone-900 p-8 flex flex-col h-screen sticky top-0">
         <h1 class="text-2xl font-black italic text-white mb-10 uppercase tracking-tighter">WURM <span class="text-yellow-600">HUB</span></h1>
         <nav class="space-y-4">
-            <a href="index.html" class="flex items-center gap-3 text-white transition-all font-bold uppercase text-[10px] tracking-widest">
+            <a href="index.html" class="flex items-center gap-3 text-white font-bold uppercase text-[10px] tracking-widest">
                 <i data-lucide="shopping-bag" class="w-4 h-4 text-yellow-600"></i> Browse Market
             </a>
-            <a href="dashboard.html" class="flex items-center gap-3 text-stone-500 hover:text-white transition-all font-bold uppercase text-[10px] tracking-widest">
+            <a href="dashboard.html" class="flex items-center gap-3 text-stone-500 hover:text-white font-bold uppercase text-[10px] tracking-widest">
                 <i data-lucide="layout-dashboard" class="w-4 h-4"></i> Merchant Portal
             </a>
         </nav>
@@ -97,11 +95,11 @@
     <div id="inquiry-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-6">
         <div class="bg-[#111] border border-stone-800 w-full max-w-md rounded-3xl p-8 shadow-2xl">
             <div class="flex items-center gap-3 mb-6">
-                <div class="p-3 bg-yellow-600/10 rounded-2xl">
-                    <i data-lucide="message-square" class="w-6 h-6 text-yellow-600"></i>
+                <div id="modal-icon-bg" class="p-3 rounded-2xl">
+                    <i id="modal-icon" data-lucide="mail" class="w-6 h-6"></i>
                 </div>
                 <div>
-                    <h2 class="text-white font-black uppercase text-xl tracking-tighter">Send Message</h2>
+                    <h2 id="modal-title" class="text-white font-black uppercase text-xl tracking-tighter">Send Inquiry</h2>
                     <p id="modal-item-display" class="text-stone-500 text-[9px] font-black uppercase tracking-widest"></p>
                 </div>
             </div>
@@ -109,6 +107,7 @@
             <form id="inquiry-form" class="space-y-4">
                 <input type="hidden" id="target-seller-id">
                 <input type="hidden" id="target-item-name">
+                <input type="hidden" id="contact-method" value="dashboard">
                 
                 <div>
                     <label class="text-[9px] font-black text-stone-600 uppercase block mb-1">Your Character Name</label>
@@ -116,12 +115,12 @@
                 </div>
                 <div>
                     <label class="text-[9px] font-black text-stone-600 uppercase block mb-1">Your Message</label>
-                    <textarea id="sender-msg" class="search-input h-32 text-xs" placeholder="I'd like to buy this! Where can we meet?" required></textarea>
+                    <textarea id="sender-msg" class="search-input h-32 text-xs" placeholder="I'd like to buy this!" required></textarea>
                 </div>
                 
                 <div class="flex gap-3 pt-4">
-                    <button type="button" onclick="closeInquiry()" class="flex-1 py-4 text-stone-500 text-[10px] font-black uppercase hover:text-white transition-all">Cancel</button>
-                    <button type="submit" class="flex-1 py-4 bg-yellow-600 text-black text-[10px] font-black uppercase rounded-2xl hover:bg-white transition-all shadow-lg shadow-yellow-900/20">Send via Bot</button>
+                    <button type="button" onclick="closeInquiry()" class="flex-1 py-4 text-stone-500 text-[10px] font-black uppercase hover:text-white">Cancel</button>
+                    <button type="submit" id="submit-btn-text" class="flex-1 py-4 bg-yellow-600 text-black text-[10px] font-black uppercase rounded-2xl hover:bg-white transition-all shadow-lg">Send Message</button>
                 </div>
             </form>
         </div>
@@ -134,7 +133,7 @@
         let allItems = [];
 
         async function loadMarket() {
-            const { data: items, error } = await client.from('products').select(`*, profiles(character_name, server_name)`);
+            const { data: items, error } = await client.from('products').select(`*, profiles(character_name, server_name, discord_id)`);
             if (error) return;
             allItems = items;
             renderMarket(allItems);
@@ -148,8 +147,7 @@
         function renderMarket(items) {
             const container = document.getElementById('market-grid');
             container.innerHTML = items.map(item => {
-                let qlClass = "ql-common";
-                let qlColor = "text-[#d4af37]";
+                let qlClass = "ql-common", qlColor = "text-[#d4af37]";
                 if (item.base_ql >= 90) { qlClass = "ql-fantastic"; qlColor = "text-[#ec4899]"; }
                 else if (item.base_ql >= 70) { qlClass = "ql-supreme"; qlColor = "text-[#0ea5e9]"; }
                 else if (item.base_ql >= 50) { qlClass = "ql-rare"; qlColor = "text-[#3b82f6]"; }
@@ -163,42 +161,57 @@
 
                 return `
                 <div class="market-card p-8 ${qlClass}">
-                    <div class="icon-header ${qlColor}">
-                        <i data-lucide="${getIcon(item.category)}" class="w-6 h-6"></i>
-                    </div>
-
+                    <div class="icon-header ${qlColor}"><i data-lucide="${getIcon(item.category)}" class="w-6 h-6"></i></div>
                     <h3 class="text-white font-black uppercase text-xl mb-3 tracking-tight">${item.item_name}</h3>
-                    
                     <p class="text-[11px] text-stone-300 font-extrabold uppercase tracking-[0.15em] mb-8">
-                        <span class="${qlColor}">QL ${item.base_ql}</span> 
-                        <span class="mx-2 text-stone-700">•</span> 
-                        ${item.profiles?.server_name || 'Global'}
+                        <span class="${qlColor}">QL ${item.base_ql}</span> <span class="mx-2 text-stone-700">•</span> ${item.profiles?.server_name || 'Global'}
                     </p>
-
-                    <div class="font-mono text-2xl font-black mb-10">
-                        ${price || '<span class="text-stone-800 text-sm italic">Taking Offers</span>'}
-                    </div>
-
+                    <div class="font-mono text-2xl font-black mb-10">${price || '<span class="text-stone-800 text-sm italic">Taking Offers</span>'}</div>
                     <div class="w-full pt-6 border-t border-stone-900/50 flex justify-between items-center mt-auto">
                         <div class="text-left">
                             <span class="block text-[8px] font-black text-stone-700 uppercase mb-1">Merchant</span>
                             <span class="text-[10px] font-black text-stone-400 uppercase tracking-tighter">${item.profiles?.character_name || 'Unknown'}</span>
                         </div>
-                        <button onclick="openInquiry('${item.seller_id}', '${item.item_name}')" 
-                            class="bg-stone-900 border border-stone-800 text-white p-3 rounded-xl hover:bg-yellow-600 hover:text-black transition-all">
-                            <i data-lucide="mail" class="w-4 h-4"></i>
-                        </button>
+                        <div class="flex gap-2">
+                            <button onclick="openInquiry('${item.seller_id}', '${item.item_name}', 'dashboard')" class="bg-stone-900 border border-stone-800 text-white p-3 rounded-xl hover:bg-white hover:text-black transition-all">
+                                <i data-lucide="mail" class="w-4 h-4"></i>
+                            </button>
+                            ${item.profiles?.discord_id ? `
+                            <button onclick="openInquiry('${item.seller_id}', '${item.item_name}', 'discord')" class="bg-[#5865F2]/10 border border-[#5865F2]/20 text-[#5865F2] p-3 rounded-xl hover:bg-[#5865F2] hover:text-white transition-all">
+                                <i data-lucide="message-square" class="w-4 h-4"></i>
+                            </button>` : ''}
+                        </div>
                     </div>
-                </div>
-            `}).join('');
+                </div>`;
+            }).join('');
             lucide.createIcons();
         }
 
-        // Inquiry Modal Logic
-        window.openInquiry = (sellerId, itemName) => {
+        window.openInquiry = (sellerId, itemName, mode) => {
             document.getElementById('target-seller-id').value = sellerId;
             document.getElementById('target-item-name').value = itemName;
+            document.getElementById('contact-method').value = mode;
             document.getElementById('modal-item-display').innerText = `Item: ${itemName}`;
+            
+            const btn = document.getElementById('submit-btn-text');
+            const iconBg = document.getElementById('modal-icon-bg');
+            const icon = document.getElementById('modal-icon');
+
+            if (mode === 'discord') {
+                document.getElementById('modal-title').innerText = "Discord Inquiry";
+                btn.innerText = "Send via Bot";
+                btn.className = "flex-1 py-4 bg-[#5865F2] text-white text-[10px] font-black uppercase rounded-2xl hover:opacity-90 transition-all shadow-lg";
+                iconBg.className = "p-3 bg-[#5865F2]/10 rounded-2xl text-[#5865F2]";
+                icon.setAttribute('data-lucide', 'message-square');
+            } else {
+                document.getElementById('modal-title').innerText = "Dashboard Message";
+                btn.innerText = "Send to Merchant";
+                btn.className = "flex-1 py-4 bg-yellow-600 text-black text-[10px] font-black uppercase rounded-2xl hover:bg-white transition-all shadow-lg";
+                iconBg.className = "p-3 bg-yellow-600/10 rounded-2xl text-yellow-600";
+                icon.setAttribute('data-lucide', 'mail');
+            }
+            
+            lucide.createIcons();
             document.getElementById('inquiry-modal').classList.replace('hidden', 'flex');
         };
 
@@ -209,6 +222,7 @@
 
         document.getElementById('inquiry-form').onsubmit = async (e) => {
             e.preventDefault();
+            const mode = document.getElementById('contact-method').value;
             const payload = {
                 seller_id: document.getElementById('target-seller-id').value,
                 item_name: document.getElementById('target-item-name').value,
@@ -219,10 +233,10 @@
 
             const { error } = await client.from('inquiries').insert([payload]);
             if (!error) {
-                alert("Inquiry sent to merchant via bot!");
+                alert(mode === 'discord' ? "Inquiry sent via Discord Bot!" : "Message sent to merchant dashboard!");
                 closeInquiry();
             } else {
-                alert("Error sending inquiry: " + error.message);
+                alert("Error: " + error.message);
             }
         };
 
